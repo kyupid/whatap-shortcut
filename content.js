@@ -45,6 +45,16 @@
     { name: 'CPM 그룹 프로젝트', path: '/v2/cpmGroup/project/list', category: 'Group' },
   ];
 
+  // 공통 메뉴 (모든 프로젝트 타입에서 사용 가능)
+  const COMMON_MENUS = [
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
+    { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
+    { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
+    { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
+    { name: 'NGINX 플러그인', path: '/openmx/plugin/nginx', category: 'OpenMetrics' },
+    { name: 'Istio 플러그인', path: '/openmx/plugin/istio', category: 'OpenMetrics' },
+  ];
+
   // APM 메뉴
   const APM_MENUS = [
     // Dashboard
@@ -82,8 +92,6 @@
     { name: '리모트 통계', path: '/stat_remote', category: 'Statistics' },
     { name: 'User Agent 통계', path: '/stat_useragent', category: 'Statistics' },
     { name: 'User Agent 상세 통계', path: '/stat_useragent_detail', category: 'Statistics' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Agent Configuration
     { name: '환경 변수', path: '/environment', category: 'Agent' },
     { name: '부트 환경', path: '/boot_environment', category: 'Agent' },
@@ -146,8 +154,6 @@
     // Agent Setting
     { name: '서버 에이전트', path: '/server/agent', category: 'Agent' },
     { name: '서버 설정', path: '/server/setting', category: 'Agent' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Event
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
     { name: '유지보수', path: '/maintenance', category: 'Event' },
@@ -206,8 +212,6 @@
     { name: 'SGA', path: '/size_increase/sga', category: 'Size' },
     // Log
     { name: '클라우드 로그 뷰어', path: '/cloud_log_viewer', category: 'Log' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Management
     { name: '에이전트 목록', path: '/agent_list', category: 'Management' },
     { name: '에이전트 설치', path: '/install', category: 'Management' },
@@ -284,12 +288,6 @@
     { name: '에이전트 설치', path: '/install', category: 'Management' },
     { name: '프로젝트 관리', path: '/management', category: 'Management' },
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
-    // OpenMetrics
-    { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
-    { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
-    { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
-    { name: 'NGINX 플러그인', path: '/openmx/plugin/nginx', category: 'OpenMetrics' },
-    { name: 'Istio 플러그인', path: '/openmx/plugin/istio', category: 'OpenMetrics' },
     // Event
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 규칙 V2', path: '/event/rules_v2', category: 'Event' },
@@ -300,8 +298,6 @@
     { name: '로그 탐색기', path: '/logExplorer', category: 'Log' },
     { name: '로그 검색', path: '/logSearch', category: 'Log' },
     { name: '로그 설정', path: '/logSetting', category: 'Log' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // URL Monitoring (WPM) 메뉴
@@ -321,8 +317,6 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Browser 메뉴
@@ -353,9 +347,7 @@
     { name: '에이전트 설치', path: '/install', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // Mobile 메뉴
   const MOBILE_MENUS = [
@@ -377,9 +369,7 @@
     { name: '에이전트 설치', path: '/install', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // Network Performance (NPM) 메뉴
   const NETWORK_MENUS = [
@@ -398,9 +388,7 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // Network Management (NMS) 메뉴
   const NETWORK_MGMT_MENUS = [
@@ -431,9 +419,7 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // Cloud Integration (VR) 메뉴
   const CLOUD_MENUS = [
@@ -452,9 +438,7 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // Log Monitoring 메뉴
   const LOG_MENUS = [
@@ -469,9 +453,7 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
-    // Report
-    { name: '보고서', path: '/flexible_report', category: 'Report' },
-  ];
+    ];
 
   // productType → URL path 매핑
   const PRODUCT_TYPE_MAP = {
@@ -603,6 +585,28 @@
     return result;
   }
 
+  // 모든 프로젝트 가져오기 (공통 메뉴용)
+  function getAllProjects() {
+    const result = [];
+    for (const [pcode, project] of Object.entries(projects)) {
+      result.push({
+        pcode: project.pcode,
+        name: project.name,
+        platform: project.platform,
+        productType: project.productType
+      });
+    }
+    return result;
+  }
+
+  // 현재 선택된 메뉴에 맞는 프로젝트 목록 가져오기
+  function getProjectListForMenu(menu) {
+    if (!menu) return [];
+    return menu.productType === 'common'
+      ? getAllProjects()
+      : getProjectsForProductType(menu.productType);
+  }
+
   // 모든 메뉴 가져오기 (빈도 기반 정렬)
   function getAllMenus() {
     const allMenus = [];
@@ -613,6 +617,15 @@
         ...menu,
         productType: 'global',
         fullPath: menu.path
+      });
+    });
+
+    // 공통 메뉴 (모든 프로젝트에서 사용 가능)
+    COMMON_MENUS.forEach(menu => {
+      allMenus.push({
+        ...menu,
+        productType: 'common',
+        displayProductType: '공통'
       });
     });
 
@@ -868,7 +881,7 @@
       filteredMenus = fuzzySearch(query, getAllMenus());
       renderMenuResults();
     } else if (currentStep === 'project') {
-      const projectList = getProjectsForProductType(selectedMenu.productType);
+      const projectList = getProjectListForMenu(selectedMenu);
       renderProjectResults(projectList);
     }
   }
@@ -879,7 +892,7 @@
 
     const maxIndex = currentStep === 'menu'
       ? Math.min(filteredMenus.length, 50) - 1
-      : getProjectsForProductType(selectedMenu?.productType || '').length - 1;
+      : getProjectListForMenu(selectedMenu).length - 1;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -889,7 +902,7 @@
         if (currentStep === 'menu') {
           renderMenuResults();
         } else {
-          renderProjectResults(getProjectsForProductType(selectedMenu.productType));
+          renderProjectResults(getProjectListForMenu(selectedMenu));
         }
         break;
 
@@ -900,7 +913,7 @@
         if (currentStep === 'menu') {
           renderMenuResults();
         } else {
-          renderProjectResults(getProjectsForProductType(selectedMenu.productType));
+          renderProjectResults(getProjectListForMenu(selectedMenu));
         }
         break;
 
@@ -909,7 +922,7 @@
         if (currentStep === 'menu' && filteredMenus[selectedIndex]) {
           selectMenu(filteredMenus[selectedIndex]);
         } else if (currentStep === 'project') {
-          const projectList = getProjectsForProductType(selectedMenu.productType);
+          const projectList = getProjectListForMenu(selectedMenu);
           const query = searchInput.value.trim().toLowerCase();
           let filtered = projectList;
           if (query) {
@@ -971,12 +984,16 @@
       searchInput.value = '';
       searchInput.placeholder = '프로젝트 검색...';
       updateBreadcrumb();
-      renderProjectResults(getProjectsForProductType(menu.productType));
+      renderProjectResults(getProjectListForMenu(menu));
     }
   }
 
   function navigateToProject(project) {
-    const fullPath = `/v2/project/${selectedMenu.productType}/${project.pcode}${selectedMenu.path}`;
+    // 공통 메뉴면 프로젝트의 productType 사용, 아니면 메뉴의 productType 사용
+    const urlProductType = selectedMenu.productType === 'common'
+      ? PRODUCT_TYPE_MAP[project.productType]
+      : selectedMenu.productType;
+    const fullPath = `/v2/project/${urlProductType}/${project.pcode}${selectedMenu.path}`;
     saveVisitCount(selectedMenu.path);
     saveProjectVisitCount(project.pcode);
     window.location.href = fullPath;
