@@ -26,7 +26,7 @@
       <div class="whatap-qn-container">
         <div class="whatap-qn-header">
           <span class="whatap-qn-breadcrumb"></span>
-          <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침 (5초 쿨다운)">↻</button>
+          <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침">↻</button>
         </div>
         <div class="whatap-qn-search-wrapper">
           <svg class="whatap-qn-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
