@@ -100,7 +100,12 @@
       const data = await response.json();
       if (data.ok && data.data && data.data.projects) {
         QN.state.projects = data.data.projects;
-        localStorage.setItem('whatap_qn_projects', JSON.stringify(QN.state.projects));
+        // localStorage 저장 시도 (용량 초과 시 무시)
+        try {
+          localStorage.setItem('whatap_qn_projects', JSON.stringify(QN.state.projects));
+        } catch (storageError) {
+          // QuotaExceededError 등 - 캐시 저장 실패해도 동작에는 문제 없음
+        }
       }
     } catch (e) {
       console.error('Failed to load projects:', e);
@@ -113,11 +118,21 @@
     }
   };
 
+  // productType을 URL용 타입으로 변환 (대소문자 무관)
+  QN.getUrlProductType = function(productType) {
+    if (!productType) return null;
+    let urlType = QN.PRODUCT_TYPE_MAP[productType];
+    if (!urlType) {
+      urlType = QN.PRODUCT_TYPE_MAP[productType.toUpperCase()];
+    }
+    return urlType;
+  };
+
   // productType으로 프로젝트 필터링
   QN.getProjectsForProductType = function(urlProductType) {
     const result = [];
     for (const [pcode, project] of Object.entries(QN.state.projects)) {
-      const mappedType = QN.PRODUCT_TYPE_MAP[project.productType];
+      const mappedType = QN.getUrlProductType(project.productType);
       if (mappedType === urlProductType) {
         result.push({
           pcode: project.pcode,
@@ -227,7 +242,7 @@
 
   // 특정 productType의 메뉴 가져오기
   QN.getMenusForProductType = function(productType) {
-    const urlType = QN.PRODUCT_TYPE_MAP[productType];
+    const urlType = QN.getUrlProductType(productType);
     if (!urlType) return [];
 
     const menus = QN.PRODUCT_MENUS[urlType] || [];

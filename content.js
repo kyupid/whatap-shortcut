@@ -458,7 +458,7 @@
   function navigateToProject(project) {
     // 공통 메뉴면 프로젝트의 productType 사용, 아니면 메뉴의 productType 사용
     const urlProductType = state.selectedMenu.productType === 'common'
-      ? QN.PRODUCT_TYPE_MAP[project.productType]
+      ? QN.getUrlProductType(project.productType)
       : state.selectedMenu.productType;
     const fullPath = `/v2/project/${urlProductType}/${project.pcode}${state.selectedMenu.path}`;
     QN.saveVisitCount(state.selectedMenu.path);
@@ -471,7 +471,7 @@
   function navigateFromProject(menu) {
     // 공통 메뉴면 프로젝트의 productType 사용
     const urlProductType = menu.productType === 'common'
-      ? QN.PRODUCT_TYPE_MAP[state.selectedProject.productType]
+      ? QN.getUrlProductType(state.selectedProject.productType)
       : menu.productType;
     const fullPath = `/v2/project/${urlProductType}/${state.selectedProject.pcode}${menu.path}`;
     QN.saveVisitCount(menu.path);

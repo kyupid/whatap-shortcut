@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/kyw/git/whatap-shortcut log --oneline -5)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
