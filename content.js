@@ -522,6 +522,14 @@
   // 초기화
   // ============================================
 
+  // 모니터링 서비스가 아닌 서브도메인에서는 실행 안 함
+  const EXCLUDED_SUBDOMAINS = ['jenkins', 'docs', 'guide', 'api', 'status', 'blog', 'www'];
+  const subdomain = window.location.hostname.split('.')[0];
+
+  if (EXCLUDED_SUBDOMAINS.includes(subdomain)) {
+    return; // 조용히 종료
+  }
+
   // 전역 키보드 이벤트
   document.addEventListener('keydown', (e) => {
     // Cmd+K / Ctrl+K
@@ -559,6 +567,6 @@
   QN.loadProjectVisitCounts();
   QN.loadProjects();
 
-  console.log('WhaTap Quick Navigation v2 loaded. Press Cmd+K (Mac) or Ctrl+K (Windows) to open.');
+  console.log('WhaTap Quick Navigation loaded. Press Cmd+K (Mac) or Ctrl+K (Windows) to open.');
 
 })(window.WhaTapQN);
