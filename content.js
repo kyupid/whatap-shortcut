@@ -12,6 +12,10 @@
   // 모달 UI
   // ============================================
 
+  // 새로고침 버튼 쿨다운
+  let lastRefreshTime = 0;
+  const REFRESH_COOLDOWN = 5000; // 5초
+
   function createModal() {
     if (state.modal) return;
 
@@ -22,6 +26,7 @@
       <div class="whatap-qn-container">
         <div class="whatap-qn-header">
           <span class="whatap-qn-breadcrumb"></span>
+          <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침 (5초 쿨다운)">↻</button>
         </div>
         <div class="whatap-qn-search-wrapper">
           <svg class="whatap-qn-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -46,10 +51,34 @@
     state.searchInput = state.modal.querySelector('.whatap-qn-input');
     state.resultsList = state.modal.querySelector('.whatap-qn-results');
     const backdrop = state.modal.querySelector('.whatap-qn-backdrop');
+    const refreshBtn = state.modal.querySelector('.whatap-qn-refresh-btn');
 
     state.searchInput.addEventListener('input', handleSearch);
     state.searchInput.addEventListener('keydown', handleKeydown);
     backdrop.addEventListener('click', hideModal);
+
+    // 새로고침 버튼 클릭 핸들러
+    refreshBtn.addEventListener('click', async () => {
+      const now = Date.now();
+      if (now - lastRefreshTime < REFRESH_COOLDOWN) {
+        return; // 쿨다운 중
+      }
+      lastRefreshTime = now;
+
+      refreshBtn.classList.add('loading');
+      await QN.loadProjects(true); // forceRefresh
+      refreshBtn.classList.remove('loading');
+
+      // 현재 단계에 따라 목록 갱신
+      if (state.currentStep === 'menu') {
+        state.filteredItems = QN.getAllItems();
+        renderItemResults();
+      } else if (state.currentStep === 'project') {
+        renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
+      } else if (state.currentStep === 'menu_for_project') {
+        renderMenusForProject();
+      }
+    });
   }
 
   function updateBreadcrumb() {

@@ -459,17 +459,22 @@ window.WhaTapQN = window.WhaTapQN || {};
   ];
 
   // productType → URL path 매핑
+  // API에서 반환하는 값과 UI 표시 이름 모두 지원
   QN.PRODUCT_TYPE_MAP = {
     'APM': 'apm',
     'DB': 'database',
     'SERVER': 'sms',
+    'SMS': 'sms',           // API 반환값
     'CONTAINER': 'cpm',
+    'CPM': 'cpm',           // API 반환값
     'URL': 'wpm',
+    'WPM': 'wpm',           // API 반환값
     'BROWSER': 'browser',
     'MOBILE': 'mobile',
     'NETWORK': 'network',
     'NMS': 'networkManagement',
     'CLOUD': 'vr',
+    'VR': 'vr',             // API 반환값
     'LOG': 'log',
   };
 

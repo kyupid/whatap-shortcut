@@ -91,8 +91,29 @@
     return pathname;
   };
 
-  // 프로젝트 목록 로드 (API)
-  QN.loadProjects = async function() {
+  // 프로젝트 목록 로드 (API) - TTL 1시간 캐시
+  const PROJECT_CACHE_TTL = 60 * 60 * 1000; // 1시간
+
+  QN.loadProjects = async function(forceRefresh = false) {
+    // 캐시 확인 (강제 새로고침이 아닐 때)
+    if (!forceRefresh) {
+      try {
+        const cached = localStorage.getItem('whatap_qn_projects');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          // 새 캐시 구조 (timestamp 포함) 또는 기존 구조 호환
+          const data = parsed.data || parsed;
+          const timestamp = parsed.timestamp || 0;
+
+          if (Date.now() - timestamp < PROJECT_CACHE_TTL) {
+            QN.state.projects = data;
+            return; // 캐시 사용
+          }
+        }
+      } catch (e) {}
+    }
+
+    // API 호출
     try {
       const response = await fetch('/account/api/v4/groups/min', {
         credentials: 'include'
@@ -100,18 +121,26 @@
       const data = await response.json();
       if (data.ok && data.data && data.data.projects) {
         QN.state.projects = data.data.projects;
-        // localStorage 저장 시도 (용량 초과 시 무시)
+
+        // localStorage 저장 (타임스탬프 포함)
         try {
-          localStorage.setItem('whatap_qn_projects', JSON.stringify(QN.state.projects));
+          localStorage.setItem('whatap_qn_projects', JSON.stringify({
+            data: QN.state.projects,
+            timestamp: Date.now()
+          }));
         } catch (storageError) {
           // QuotaExceededError 등 - 캐시 저장 실패해도 동작에는 문제 없음
         }
       }
     } catch (e) {
       console.error('Failed to load projects:', e);
+      // API 실패 시 만료된 캐시라도 사용
       try {
         const cached = localStorage.getItem('whatap_qn_projects');
-        if (cached) QN.state.projects = JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          QN.state.projects = parsed.data || parsed;
+        }
       } catch (e2) {
         console.error('Failed to load cached projects:', e2);
       }
@@ -124,6 +153,10 @@
     let urlType = QN.PRODUCT_TYPE_MAP[productType];
     if (!urlType) {
       urlType = QN.PRODUCT_TYPE_MAP[productType.toUpperCase()];
+    }
+    // 디버깅: 매핑 안 되는 productType 확인
+    if (!urlType) {
+      console.warn('[QN] Unknown productType:', productType, '- add to PRODUCT_TYPE_MAP');
     }
     return urlType;
   };
