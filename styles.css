@@ -49,9 +49,6 @@
 }
 
 .whatap-qn-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 12px 20px 0;
   min-height: 20px;
 }
@@ -59,35 +56,6 @@
 .whatap-qn-breadcrumb {
   font-size: 13px;
   color: var(--whatap-primary-200);
-  flex: 1;
-}
-
-.whatap-qn-refresh-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: var(--whatap-primary-200);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  opacity: 0.6;
-  transition: opacity 0.2s, background 0.2s, transform 0.3s;
-}
-
-.whatap-qn-refresh-btn:hover {
-  opacity: 1;
-  background: rgba(87, 132, 248, 0.15);
-}
-
-.whatap-qn-refresh-btn.loading {
-  animation: whatap-qn-spin 0.8s linear infinite;
-  pointer-events: none;
-  opacity: 1;
-}
-
-@keyframes whatap-qn-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 .whatap-qn-crumb {
@@ -270,10 +238,40 @@
 
 .whatap-qn-footer {
   display: flex;
+  align-items: center;
   gap: 16px;
   padding: 12px 20px;
   border-top: 1px solid rgba(87, 132, 248, 0.15);
   background: rgba(87, 132, 248, 0.08);
+}
+
+.whatap-qn-refresh-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--whatap-primary-200);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.whatap-qn-refresh-btn:hover {
+  opacity: 1;
+  background: rgba(87, 132, 248, 0.15);
+}
+
+.whatap-qn-refresh-btn.loading {
+  animation: whatap-qn-spin 0.8s linear infinite;
+  pointer-events: none;
+  opacity: 1;
+}
+
+@keyframes whatap-qn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .whatap-qn-footer span {
