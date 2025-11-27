@@ -48,6 +48,8 @@
   // 공통 메뉴 (모든 프로젝트 타입에서 사용 가능)
   const COMMON_MENUS = [
     { name: '보고서', path: '/flexible_report', category: 'Report' },
+    { name: '메트릭스 조회', path: '/tag_count', category: 'Metrics' },
+    { name: '메트릭스 차트', path: '/metrics_chart', category: 'Metrics' },
     { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
     { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
     { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
