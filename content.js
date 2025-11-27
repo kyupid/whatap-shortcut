@@ -130,8 +130,6 @@
     { name: '로그 탐색기', path: '/logExplorer', category: 'Log' },
     { name: '로그 검색', path: '/logSearch', category: 'Log' },
     { name: '로그 설정', path: '/logSetting', category: 'Log' },
-    // Lab
-    { name: 'MXQL', path: '/mxql', category: 'Lab' },
   ];
 
   // Server (SMS) 메뉴
