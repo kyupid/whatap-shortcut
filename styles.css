@@ -157,25 +157,31 @@
 }
 
 .whatap-qn-item-content {
+  display: flex;
+  align-items: center;
   flex: 1;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.whatap-qn-item-icon {
+  margin-right: 8px;
+  font-size: 14px;
 }
 
 .whatap-qn-item-name {
-  display: block;
   font-size: 14px;
   font-weight: 500;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-right: 8px;
 }
 
 .whatap-qn-item-category {
-  display: block;
   font-size: 12px;
   color: var(--whatap-primary-200);
-  margin-top: 2px;
 }
 
 .whatap-qn-item-meta {

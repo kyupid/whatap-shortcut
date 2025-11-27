@@ -493,10 +493,11 @@
   let resultsList = null;
   let selectedIndex = 0;
   let isKeyboardNavigation = false;
-  let filteredMenus = [];
+  let filteredItems = [];  // 메뉴 + 프로젝트 통합
   let projects = {};
-  let currentStep = 'menu'; // 'menu' | 'project'
+  let currentStep = 'menu'; // 'menu' | 'project' | 'menu_for_project'
   let selectedMenu = null;
+  let selectedProject = null;  // 프로젝트 먼저 선택 시 사용
   let visitCounts = {};
   let projectVisitCounts = {};
 
@@ -650,53 +651,141 @@
     return allMenus;
   }
 
-  // 퍼지 검색
-  function fuzzySearch(query, menus) {
-    if (!query) return menus;
+  // 모든 항목 (메뉴 + 프로젝트) 가져오기
+  function getAllItems() {
+    const allItems = [];
+
+    // 메뉴 추가
+    getAllMenus().forEach(menu => {
+      allItems.push({
+        ...menu,
+        itemType: 'menu'
+      });
+    });
+
+    // 프로젝트 추가
+    for (const [pcode, project] of Object.entries(projects)) {
+      allItems.push({
+        itemType: 'project',
+        pcode: project.pcode,
+        name: project.name,
+        platform: project.platform,
+        productType: project.productType
+      });
+    }
+
+    return allItems;
+  }
+
+  // 특정 productType의 메뉴 가져오기
+  function getMenusForProductType(productType) {
+    const urlType = PRODUCT_TYPE_MAP[productType];
+    if (!urlType) return [];
+
+    const menus = PRODUCT_MENUS[urlType] || [];
+    const result = menus.map(menu => ({
+      ...menu,
+      productType: urlType,
+      displayProductType: urlType.toUpperCase(),
+      itemType: 'menu'
+    }));
+
+    // 공통 메뉴 추가
+    COMMON_MENUS.forEach(menu => {
+      result.push({
+        ...menu,
+        productType: 'common',
+        displayProductType: '공통',
+        itemType: 'menu'
+      });
+    });
+
+    // 빈도 기반 정렬
+    result.sort((a, b) => {
+      const countA = visitCounts[a.path] || 0;
+      const countB = visitCounts[b.path] || 0;
+      return countB - countA;
+    });
+
+    return result;
+  }
+
+  // 퍼지 검색 (메뉴 + 프로젝트 통합)
+  function fuzzySearch(query, items) {
+    if (!query) return items;
 
     const lowerQuery = query.toLowerCase();
-    const scored = menus.map(menu => {
-      const name = menu.name.toLowerCase();
-      const category = (menu.category || '').toLowerCase();
-      const path = menu.path.toLowerCase();
-      const productType = (menu.displayProductType || menu.productType || '').toLowerCase();
-      const aliases = menu.aliases || [];
-
+    const scored = items.map(item => {
       let score = 0;
 
-      // 별칭 매칭 (높은 점수)
-      for (const alias of aliases) {
-        if (alias.toLowerCase().startsWith(lowerQuery)) score += 120;
-        else if (alias.toLowerCase().includes(lowerQuery)) score += 80;
+      if (item.itemType === 'project') {
+        // 프로젝트 검색
+        const name = item.name.toLowerCase();
+        const pcode = String(item.pcode);
+        const platform = (item.platform || '').toLowerCase();
+        const productType = (item.productType || '').toLowerCase();
+
+        // pcode 매칭 (높은 점수)
+        if (pcode === lowerQuery) score += 150;
+        else if (pcode.startsWith(lowerQuery)) score += 120;
+        else if (pcode.includes(lowerQuery)) score += 80;
+
+        // 이름 매칭
+        if (name.startsWith(lowerQuery)) score += 100;
+        if (name.includes(lowerQuery)) score += 30;
+
+        // 플랫폼/productType 매칭
+        if (platform.startsWith(lowerQuery)) score += 50;
+        if (platform.includes(lowerQuery)) score += 20;
+        if (productType.startsWith(lowerQuery)) score += 50;
+        if (productType.includes(lowerQuery)) score += 20;
+
+        // 빈도 가중치
+        const visitCount = projectVisitCounts[item.pcode] || 0;
+        score += visitCount * 5;
+
+      } else {
+        // 메뉴 검색 (기존 로직)
+        const name = item.name.toLowerCase();
+        const category = (item.category || '').toLowerCase();
+        const path = (item.path || '').toLowerCase();
+        const productType = (item.displayProductType || item.productType || '').toLowerCase();
+        const aliases = item.aliases || [];
+
+        // 별칭 매칭 (높은 점수)
+        for (const alias of aliases) {
+          if (alias.toLowerCase().startsWith(lowerQuery)) score += 120;
+          else if (alias.toLowerCase().includes(lowerQuery)) score += 80;
+        }
+
+        // 정확히 시작하면 높은 점수
+        if (name.startsWith(lowerQuery)) score += 100;
+        if (category.startsWith(lowerQuery)) score += 50;
+        if (productType.startsWith(lowerQuery)) score += 50;
+
+        // 포함하면 중간 점수
+        if (name.includes(lowerQuery)) score += 30;
+        if (category.includes(lowerQuery)) score += 20;
+        if (path.includes(lowerQuery)) score += 10;
+        if (productType.includes(lowerQuery)) score += 20;
+
+        // 각 단어의 첫 글자 매칭
+        const words = name.split(/\s+/);
+        const initials = words.map(w => w[0]).join('').toLowerCase();
+        if (initials.includes(lowerQuery)) score += 40;
+
+        // 빈도 가중치
+        const visitCount = visitCounts[item.path] || 0;
+        score += visitCount * 5;
       }
 
-      // 정확히 시작하면 높은 점수
-      if (name.startsWith(lowerQuery)) score += 100;
-      if (category.startsWith(lowerQuery)) score += 50;
-      if (productType.startsWith(lowerQuery)) score += 50;
-
-      // 포함하면 중간 점수
-      if (name.includes(lowerQuery)) score += 30;
-      if (category.includes(lowerQuery)) score += 20;
-      if (path.includes(lowerQuery)) score += 10;
-      if (productType.includes(lowerQuery)) score += 20;
-
-      // 각 단어의 첫 글자 매칭
-      const words = name.split(/\s+/);
-      const initials = words.map(w => w[0]).join('').toLowerCase();
-      if (initials.includes(lowerQuery)) score += 40;
-
-      // 빈도 가중치
-      const visitCount = visitCounts[menu.path] || 0;
-      score += visitCount * 5;
-
-      return { menu, score };
+      return { item, score };
     });
 
     return scored
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .map(item => item.menu);
+      .map(item => item.item);
   }
 
   // ============================================
@@ -749,20 +838,96 @@
       breadcrumb.textContent = '';
     } else if (currentStep === 'project' && selectedMenu) {
       breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${selectedMenu.name}</span> → 프로젝트 선택`;
+    } else if (currentStep === 'menu_for_project' && selectedProject) {
+      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${selectedProject.name}</span> → 메뉴 선택`;
     }
   }
 
-  function renderMenuResults() {
+  // 첫 단계: 메뉴 + 프로젝트 통합 렌더링
+  function renderItemResults() {
     resultsList.innerHTML = '';
 
-    if (filteredMenus.length === 0) {
+    if (filteredItems.length === 0) {
       resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
       return;
     }
 
-    filteredMenus.slice(0, 50).forEach((menu, index) => {
-      const item = document.createElement('div');
-      item.className = 'whatap-qn-item' + (index === selectedIndex ? ' selected' : '');
+    filteredItems.slice(0, 50).forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'whatap-qn-item' + (index === selectedIndex ? ' selected' : '');
+
+      if (item.itemType === 'project') {
+        // 프로젝트 렌더링
+        const visitCount = projectVisitCounts[item.pcode] || 0;
+        const visitBadge = visitCount > 0
+          ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
+          : '';
+
+        div.innerHTML = `
+          <div class="whatap-qn-item-content">
+            <span class="whatap-qn-item-icon">📁</span>
+            <span class="whatap-qn-item-name">${item.name}</span>
+            <span class="whatap-qn-item-category">${item.platform || item.productType}</span>
+          </div>
+          <div class="whatap-qn-item-meta">
+            ${visitBadge}
+            <span class="whatap-qn-pcode">#${item.pcode}</span>
+          </div>
+        `;
+        div.addEventListener('click', () => selectProjectFirst(item));
+      } else {
+        // 메뉴 렌더링
+        const productBadge = item.productType !== 'global'
+          ? `<span class="whatap-qn-badge">${item.displayProductType || item.productType.toUpperCase()}</span>`
+          : '';
+
+        const visitBadge = visitCounts[item.path]
+          ? `<span class="whatap-qn-visit-count">${visitCounts[item.path]}</span>`
+          : '';
+
+        div.innerHTML = `
+          <div class="whatap-qn-item-content">
+            <span class="whatap-qn-item-name">${item.name}</span>
+            <span class="whatap-qn-item-category">${item.category || ''}</span>
+          </div>
+          <div class="whatap-qn-item-meta">
+            ${visitBadge}
+            ${productBadge}
+          </div>
+        `;
+        div.addEventListener('click', () => selectMenu(item));
+      }
+
+      div.addEventListener('mouseenter', () => {
+        if (isKeyboardNavigation) return;
+        selectedIndex = index;
+        renderItemResults();
+      });
+      div.addEventListener('mousemove', () => {
+        isKeyboardNavigation = false;
+      });
+      resultsList.appendChild(div);
+    });
+
+    scrollToSelected();
+  }
+
+  // 프로젝트 먼저 선택 후 메뉴 렌더링
+  function renderMenusForProject() {
+    resultsList.innerHTML = '';
+
+    const menus = getMenusForProductType(selectedProject.productType);
+    const query = searchInput.value.trim();
+    const filtered = query ? fuzzySearch(query, menus) : menus;
+
+    if (filtered.length === 0) {
+      resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
+      return;
+    }
+
+    filtered.slice(0, 50).forEach((menu, index) => {
+      const div = document.createElement('div');
+      div.className = 'whatap-qn-item' + (index === selectedIndex ? ' selected' : '');
 
       const productBadge = menu.productType !== 'global'
         ? `<span class="whatap-qn-badge">${menu.displayProductType || menu.productType.toUpperCase()}</span>`
@@ -772,7 +937,7 @@
         ? `<span class="whatap-qn-visit-count">${visitCounts[menu.path]}</span>`
         : '';
 
-      item.innerHTML = `
+      div.innerHTML = `
         <div class="whatap-qn-item-content">
           <span class="whatap-qn-item-name">${menu.name}</span>
           <span class="whatap-qn-item-category">${menu.category || ''}</span>
@@ -782,16 +947,16 @@
           ${productBadge}
         </div>
       `;
-      item.addEventListener('click', () => selectMenu(menu));
-      item.addEventListener('mouseenter', () => {
+      div.addEventListener('click', () => navigateFromProject(menu));
+      div.addEventListener('mouseenter', () => {
         if (isKeyboardNavigation) return;
         selectedIndex = index;
-        renderMenuResults();
+        renderMenusForProject();
       });
-      item.addEventListener('mousemove', () => {
+      div.addEventListener('mousemove', () => {
         isKeyboardNavigation = false;
       });
-      resultsList.appendChild(item);
+      resultsList.appendChild(div);
     });
 
     scrollToSelected();
@@ -878,11 +1043,13 @@
 
     if (currentStep === 'menu') {
       const query = searchInput.value.trim();
-      filteredMenus = fuzzySearch(query, getAllMenus());
-      renderMenuResults();
+      filteredItems = fuzzySearch(query, getAllItems());
+      renderItemResults();
     } else if (currentStep === 'project') {
       const projectList = getProjectListForMenu(selectedMenu);
       renderProjectResults(projectList);
+    } else if (currentStep === 'menu_for_project') {
+      renderMenusForProject();
     }
   }
 
@@ -890,9 +1057,17 @@
     // 한글 IME 조합 중이면 무시 (한글 입력 버그 방지)
     if (e.isComposing || e.keyCode === 229) return;
 
-    const maxIndex = currentStep === 'menu'
-      ? Math.min(filteredMenus.length, 50) - 1
-      : getProjectListForMenu(selectedMenu).length - 1;
+    let maxIndex = 0;
+    if (currentStep === 'menu') {
+      maxIndex = Math.min(filteredItems.length, 50) - 1;
+    } else if (currentStep === 'project') {
+      maxIndex = getProjectListForMenu(selectedMenu).length - 1;
+    } else if (currentStep === 'menu_for_project') {
+      const menus = getMenusForProductType(selectedProject.productType);
+      const query = searchInput.value.trim();
+      const filtered = query ? fuzzySearch(query, menus) : menus;
+      maxIndex = Math.min(filtered.length, 50) - 1;
+    }
 
     switch (e.key) {
       case 'ArrowDown':
@@ -900,9 +1075,11 @@
         isKeyboardNavigation = true;
         selectedIndex = Math.min(selectedIndex + 1, maxIndex);
         if (currentStep === 'menu') {
-          renderMenuResults();
-        } else {
+          renderItemResults();
+        } else if (currentStep === 'project') {
           renderProjectResults(getProjectListForMenu(selectedMenu));
+        } else if (currentStep === 'menu_for_project') {
+          renderMenusForProject();
         }
         break;
 
@@ -911,16 +1088,23 @@
         isKeyboardNavigation = true;
         selectedIndex = Math.max(selectedIndex - 1, 0);
         if (currentStep === 'menu') {
-          renderMenuResults();
-        } else {
+          renderItemResults();
+        } else if (currentStep === 'project') {
           renderProjectResults(getProjectListForMenu(selectedMenu));
+        } else if (currentStep === 'menu_for_project') {
+          renderMenusForProject();
         }
         break;
 
       case 'Enter':
         e.preventDefault();
-        if (currentStep === 'menu' && filteredMenus[selectedIndex]) {
-          selectMenu(filteredMenus[selectedIndex]);
+        if (currentStep === 'menu' && filteredItems[selectedIndex]) {
+          const item = filteredItems[selectedIndex];
+          if (item.itemType === 'project') {
+            selectProjectFirst(item);
+          } else {
+            selectMenu(item);
+          }
         } else if (currentStep === 'project') {
           const projectList = getProjectListForMenu(selectedMenu);
           const query = searchInput.value.trim().toLowerCase();
@@ -941,11 +1125,18 @@
           if (filtered[selectedIndex]) {
             navigateToProject(filtered[selectedIndex]);
           }
+        } else if (currentStep === 'menu_for_project') {
+          const menus = getMenusForProductType(selectedProject.productType);
+          const query = searchInput.value.trim();
+          const filtered = query ? fuzzySearch(query, menus) : menus;
+          if (filtered[selectedIndex]) {
+            navigateFromProject(filtered[selectedIndex]);
+          }
         }
         break;
 
       case 'Backspace':
-        if (searchInput.value === '' && currentStep === 'project') {
+        if (searchInput.value === '' && (currentStep === 'project' || currentStep === 'menu_for_project')) {
           e.preventDefault();
           goBackToMenuStep();
         }
@@ -958,11 +1149,11 @@
           searchInput.value = '';
           handleSearch();
         }
-        // 프로젝트 선택 단계면 메뉴로 돌아가기
-        else if (currentStep === 'project') {
+        // 프로젝트/메뉴 선택 단계면 첫 단계로 돌아가기
+        else if (currentStep === 'project' || currentStep === 'menu_for_project') {
           goBackToMenuStep();
         }
-        // 검색어 없고 메뉴 단계면 닫기
+        // 검색어 없고 첫 단계면 닫기
         else {
           hideModal();
         }
@@ -985,7 +1176,20 @@
       searchInput.placeholder = '프로젝트 검색...';
       updateBreadcrumb();
       renderProjectResults(getProjectListForMenu(menu));
+      searchInput.focus();
     }
+  }
+
+  // 프로젝트 먼저 선택 (첫 단계에서)
+  function selectProjectFirst(project) {
+    selectedProject = project;
+    currentStep = 'menu_for_project';
+    selectedIndex = 0;
+    searchInput.value = '';
+    searchInput.placeholder = '메뉴 검색...';
+    updateBreadcrumb();
+    renderMenusForProject();
+    searchInput.focus();
   }
 
   function navigateToProject(project) {
@@ -1000,15 +1204,30 @@
     hideModal();
   }
 
+  // 프로젝트 먼저 선택 후 메뉴 선택 → 이동
+  function navigateFromProject(menu) {
+    // 공통 메뉴면 프로젝트의 productType 사용
+    const urlProductType = menu.productType === 'common'
+      ? PRODUCT_TYPE_MAP[selectedProject.productType]
+      : menu.productType;
+    const fullPath = `/v2/project/${urlProductType}/${selectedProject.pcode}${menu.path}`;
+    saveVisitCount(menu.path);
+    saveProjectVisitCount(selectedProject.pcode);
+    window.location.href = fullPath;
+    hideModal();
+  }
+
   function goBackToMenuStep() {
     currentStep = 'menu';
     selectedMenu = null;
+    selectedProject = null;
     selectedIndex = 0;
     searchInput.value = '';
-    searchInput.placeholder = '메뉴 검색... (↑↓ 이동, Enter 선택)';
+    searchInput.placeholder = '메뉴 또는 프로젝트 검색...';
     updateBreadcrumb();
-    filteredMenus = getAllMenus();
-    renderMenuResults();
+    filteredItems = getAllItems();
+    renderItemResults();
+    searchInput.focus();
   }
 
   // ============================================
@@ -1020,12 +1239,13 @@
     modal.classList.add('visible');
     currentStep = 'menu';
     selectedMenu = null;
+    selectedProject = null;
     searchInput.value = '';
-    searchInput.placeholder = '메뉴 검색... (↑↓ 이동, Enter 선택)';
+    searchInput.placeholder = '메뉴 또는 프로젝트 검색...';
     updateBreadcrumb();
-    filteredMenus = getAllMenus();
+    filteredItems = getAllItems();
     selectedIndex = 0;
-    renderMenuResults();
+    renderItemResults();
     searchInput.focus();
   }
 
@@ -1060,11 +1280,11 @@
         searchInput.value = '';
         handleSearch();
       }
-      // 프로젝트 선택 단계면 메뉴 단계로 돌아가기
-      else if (currentStep === 'project') {
+      // 프로젝트/메뉴 선택 단계면 첫 단계로 돌아가기
+      else if (currentStep === 'project' || currentStep === 'menu_for_project') {
         goBackToMenuStep();
       }
-      // 검색어 없고 메뉴 단계면 모달 닫기 (2번째 ESC)
+      // 검색어 없고 첫 단계면 모달 닫기 (2번째 ESC)
       else {
         hideModal();
       }
