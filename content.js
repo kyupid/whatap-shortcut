@@ -546,6 +546,12 @@
     }
   }
 
+  // 현재 URL에서 프로젝트 pcode 추출
+  function getCurrentProjectPcode() {
+    const match = window.location.pathname.match(/\/v2\/project\/[^/]+\/(\d+)/);
+    return match ? match[1] : null;
+  }
+
   // 프로젝트 목록 로드 (API)
   async function loadProjects() {
     try {
@@ -987,20 +993,37 @@
       return;
     }
 
-    // 프로젝트 빈도수로 정렬
-    filtered.sort((a, b) => {
+    // 현재 프로젝트 pcode 가져오기
+    const currentPcode = getCurrentProjectPcode();
+    let currentProject = null;
+    let otherProjects = filtered;
+
+    if (currentPcode) {
+      currentProject = filtered.find(p => String(p.pcode) === currentPcode);
+      otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
+    }
+
+    // 나머지 프로젝트 빈도수로 정렬
+    otherProjects.sort((a, b) => {
       const countA = projectVisitCounts[a.pcode] || 0;
       const countB = projectVisitCounts[b.pcode] || 0;
       return countB - countA;
     });
 
-    filtered.forEach((project, index) => {
+    // 현재 프로젝트를 최상단에, 나머지는 그 뒤에
+    const finalList = currentProject ? [currentProject, ...otherProjects] : otherProjects;
+
+    finalList.forEach((project, index) => {
       const item = document.createElement('div');
       item.className = 'whatap-qn-item' + (index === selectedIndex ? ' selected' : '');
 
+      const isCurrentProject = currentProject && String(project.pcode) === currentPcode;
       const visitCount = projectVisitCounts[project.pcode] || 0;
       const visitBadge = visitCount > 0
         ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
+        : '';
+      const currentBadge = isCurrentProject
+        ? '<span class="whatap-qn-current-badge">현재 프로젝트</span>'
         : '';
 
       item.innerHTML = `
@@ -1009,6 +1032,7 @@
           <span class="whatap-qn-item-category">${project.platform || project.productType}</span>
         </div>
         <div class="whatap-qn-item-meta">
+          ${currentBadge}
           ${visitBadge}
           <span class="whatap-qn-pcode">#${project.pcode}</span>
         </div>
