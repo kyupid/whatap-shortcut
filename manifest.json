@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "WhaTap Quick Navigation",
+  "version": "1.0.0",
+  "description": "Cmd+K shortcut for quick navigation in WhaTap",
+  "permissions": ["activeTab", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://*.whatap.io/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

@@ -1,0 +1,272 @@
+/* WhaTap Quick Navigation - Modal Styles */
+/* WhaTap Primary Colors */
+:root {
+  --whatap-primary-100: #B7CBFF;
+  --whatap-primary-200: #82AAFF;
+  --whatap-primary-300: #5784F8;
+  --whatap-primary-400: #184ECD;
+  --whatap-primary-500: #0031A5;
+  --whatap-primary-600: #001F65;
+}
+
+#whatap-quick-nav-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+#whatap-quick-nav-modal.visible {
+  display: block;
+}
+
+.whatap-qn-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.whatap-qn-container {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 640px;
+  max-width: 90vw;
+  background: #0a1628;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(87, 132, 248, 0.2);
+  overflow: hidden;
+}
+
+.whatap-qn-header {
+  padding: 12px 20px 0;
+  min-height: 20px;
+}
+
+.whatap-qn-breadcrumb {
+  font-size: 13px;
+  color: var(--whatap-primary-200);
+}
+
+.whatap-qn-crumb {
+  color: var(--whatap-primary-100);
+  font-weight: 500;
+}
+
+.whatap-qn-search-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(87, 132, 248, 0.15);
+  background: rgba(87, 132, 248, 0.03);
+}
+
+.whatap-qn-search-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--whatap-primary-300);
+  flex-shrink: 0;
+}
+
+.whatap-qn-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #fff;
+  margin-left: 12px;
+  outline: none;
+}
+
+.whatap-qn-input::placeholder {
+  color: var(--whatap-primary-200);
+  opacity: 0.6;
+}
+
+.whatap-qn-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--whatap-primary-200);
+  background: rgba(87, 132, 248, 0.15);
+  border-radius: 4px;
+  border: 1px solid rgba(87, 132, 248, 0.2);
+}
+
+.whatap-qn-results {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.whatap-qn-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.whatap-qn-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.whatap-qn-results::-webkit-scrollbar-thumb {
+  background: rgba(87, 132, 248, 0.3);
+  border-radius: 4px;
+}
+
+.whatap-qn-results::-webkit-scrollbar-thumb:hover {
+  background: rgba(87, 132, 248, 0.5);
+}
+
+.whatap-qn-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--whatap-primary-200);
+  font-size: 14px;
+}
+
+.whatap-qn-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.whatap-qn-item:hover,
+.whatap-qn-item.selected {
+  background: rgba(87, 132, 248, 0.15);
+}
+
+.whatap-qn-item.selected {
+  background: rgba(87, 132, 248, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(87, 132, 248, 0.3);
+}
+
+.whatap-qn-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.whatap-qn-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.whatap-qn-item-category {
+  display: block;
+  font-size: 12px;
+  color: var(--whatap-primary-200);
+  margin-top: 2px;
+}
+
+.whatap-qn-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.whatap-qn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--whatap-primary-100);
+  background: var(--whatap-primary-500);
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.whatap-qn-visit-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--whatap-primary-200);
+  background: rgba(87, 132, 248, 0.1);
+  border-radius: 10px;
+}
+
+.whatap-qn-pcode {
+  font-size: 12px;
+  color: var(--whatap-primary-300);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.whatap-qn-footer {
+  display: flex;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(87, 132, 248, 0.15);
+  background: rgba(0, 49, 165, 0.2);
+}
+
+.whatap-qn-footer span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--whatap-primary-200);
+}
+
+.whatap-qn-footer kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--whatap-primary-100);
+  background: rgba(87, 132, 248, 0.15);
+  border-radius: 4px;
+  border: 1px solid rgba(87, 132, 248, 0.2);
+}
+
+/* Animation */
+#whatap-quick-nav-modal.visible .whatap-qn-container {
+  animation: whatap-qn-slide-in 0.15s ease-out;
+}
+
+@keyframes whatap-qn-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Highlight matching text (optional enhancement) */
+.whatap-qn-highlight {
+  color: var(--whatap-primary-300);
+  font-weight: 600;
+}
