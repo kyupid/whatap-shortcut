@@ -83,7 +83,7 @@
     { name: 'User Agent 통계', path: '/stat_useragent', category: 'Statistics' },
     { name: 'User Agent 상세 통계', path: '/stat_useragent_detail', category: 'Statistics' },
     // Report
-    { name: '유연한 리포트', path: '/flexible_report', category: 'Report' },
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Agent Configuration
     { name: '환경 변수', path: '/environment', category: 'Agent' },
     { name: '부트 환경', path: '/boot_environment', category: 'Agent' },
@@ -146,6 +146,8 @@
     // Agent Setting
     { name: '서버 에이전트', path: '/server/agent', category: 'Agent' },
     { name: '서버 설정', path: '/server/setting', category: 'Agent' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Event
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
     { name: '유지보수', path: '/maintenance', category: 'Event' },
@@ -204,6 +206,8 @@
     { name: 'SGA', path: '/size_increase/sga', category: 'Size' },
     // Log
     { name: '클라우드 로그 뷰어', path: '/cloud_log_viewer', category: 'Log' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
     // Management
     { name: '에이전트 목록', path: '/agent_list', category: 'Management' },
     { name: '에이전트 설치', path: '/install', category: 'Management' },
@@ -296,6 +300,8 @@
     { name: '로그 탐색기', path: '/logExplorer', category: 'Log' },
     { name: '로그 검색', path: '/logSearch', category: 'Log' },
     { name: '로그 설정', path: '/logSetting', category: 'Log' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // URL Monitoring (WPM) 메뉴
@@ -315,6 +321,8 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Browser 메뉴
@@ -345,6 +353,8 @@
     { name: '에이전트 설치', path: '/install', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Mobile 메뉴
@@ -367,6 +377,8 @@
     { name: '에이전트 설치', path: '/install', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Network Performance (NPM) 메뉴
@@ -386,6 +398,8 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Network Management (NMS) 메뉴
@@ -417,6 +431,8 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Cloud Integration (VR) 메뉴
@@ -436,6 +452,8 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // Log Monitoring 메뉴
@@ -451,6 +469,8 @@
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    // Report
+    { name: '보고서', path: '/flexible_report', category: 'Report' },
   ];
 
   // productType → URL path 매핑

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "WhaTap Quick Navigation",
   "version": "1.0.0",
-  "description": "Cmd+K (Ctrl+K) shortcut for quick menu navigation in WhaTap monitoring service. Search menus, select projects, and navigate instantly.",
+  "description": "Cmd+K (Ctrl+K) for quick menu navigation in WhaTap. Search menus, select projects, navigate instantly.",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
