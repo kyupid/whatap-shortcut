@@ -1141,14 +1141,23 @@
               (p.platform || '').toLowerCase().includes(query)
             );
           }
-          // 빈도순 정렬 (renderProjectResults와 동일)
-          filtered.sort((a, b) => {
+          // 현재 프로젝트 최상단 고정 (renderProjectResults와 동일)
+          const currentPcode = getCurrentProjectPcode();
+          let currentProject = null;
+          let otherProjects = filtered;
+          if (currentPcode) {
+            currentProject = filtered.find(p => String(p.pcode) === currentPcode);
+            otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
+          }
+          // 나머지 프로젝트 빈도순 정렬
+          otherProjects.sort((a, b) => {
             const countA = projectVisitCounts[a.pcode] || 0;
             const countB = projectVisitCounts[b.pcode] || 0;
             return countB - countA;
           });
-          if (filtered[selectedIndex]) {
-            navigateToProject(filtered[selectedIndex]);
+          const finalList = currentProject ? [currentProject, ...otherProjects] : otherProjects;
+          if (finalList[selectedIndex]) {
+            navigateToProject(finalList[selectedIndex]);
           }
         } else if (currentStep === 'menu_for_project') {
           const menus = getMenusForProductType(selectedProject.productType);
