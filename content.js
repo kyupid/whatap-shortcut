@@ -50,6 +50,7 @@
     { name: '보고서', path: '/flexible_report', category: 'Report' },
     { name: '메트릭스 조회', path: '/tag_count', category: 'Metrics' },
     { name: '메트릭스 차트', path: '/metrics_chart', category: 'Metrics' },
+    { name: 'MXQL', path: '/mxql', category: 'Lab' },
     { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
     { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
     { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
