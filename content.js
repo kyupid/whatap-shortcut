@@ -72,6 +72,8 @@
       return;
     }
 
+    const currentMenuPath = QN.getCurrentMenuPath();
+
     state.filteredItems.slice(0, 50).forEach((item, index) => {
       const div = document.createElement('div');
       div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
@@ -97,6 +99,11 @@
         div.addEventListener('click', () => selectProjectFirst(item));
       } else {
         // 메뉴 렌더링
+        const isCurrentMenu = item.path === currentMenuPath || item.fullPath === currentMenuPath;
+        const currentPageBadge = isCurrentMenu
+          ? '<span class="whatap-qn-current-badge">현재 페이지</span>'
+          : '';
+
         const productBadge = item.productType !== 'global'
           ? `<span class="whatap-qn-badge">${item.displayProductType || item.productType.toUpperCase()}</span>`
           : '';
@@ -111,6 +118,7 @@
             <span class="whatap-qn-item-category">${item.category || ''}</span>
           </div>
           <div class="whatap-qn-item-meta">
+            ${currentPageBadge}
             ${visitBadge}
             ${productBadge}
           </div>
@@ -145,9 +153,16 @@
       return;
     }
 
+    const currentMenuPath = QN.getCurrentMenuPath();
+
     filtered.slice(0, 50).forEach((menu, index) => {
       const div = document.createElement('div');
       div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
+
+      const isCurrentMenu = menu.path === currentMenuPath;
+      const currentPageBadge = isCurrentMenu
+        ? '<span class="whatap-qn-current-badge">현재 페이지</span>'
+        : '';
 
       const productBadge = menu.productType !== 'global'
         ? `<span class="whatap-qn-badge">${menu.displayProductType || menu.productType.toUpperCase()}</span>`
@@ -163,6 +178,7 @@
           <span class="whatap-qn-item-category">${menu.category || ''}</span>
         </div>
         <div class="whatap-qn-item-meta">
+          ${currentPageBadge}
           ${visitBadge}
           ${productBadge}
         </div>

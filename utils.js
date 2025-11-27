@@ -77,6 +77,20 @@
     return match ? match[1] : null;
   };
 
+  // 현재 URL에서 메뉴 path 추출
+  QN.getCurrentMenuPath = function() {
+    const pathname = window.location.pathname;
+
+    // 프로젝트 페이지: /v2/project/{productType}/{pcode}{menuPath}
+    const projectMatch = pathname.match(/\/v2\/project\/[^/]+\/\d+(.+)/);
+    if (projectMatch) {
+      return projectMatch[1]; // 예: /dashboard, /metrics_chart
+    }
+
+    // Global 페이지는 전체 경로 반환
+    return pathname;
+  };
+
   // 프로젝트 목록 로드 (API)
   QN.loadProjects = async function() {
     try {
