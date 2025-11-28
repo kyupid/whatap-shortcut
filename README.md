@@ -3,14 +3,14 @@
 WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메뉴를 탐색하는 Chrome 확장 프로그램입니다.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green?logo=googlechrome)
-![Version](https://img.shields.io/badge/version-1.0.4-blue)
+![Version](https://img.shields.io/badge/version-1.0.5-blue)
 
 ![Demo](demo.gif)
 
 ## 주요 기능
 
 - **빠른 검색**: 퍼지 검색으로 메뉴 이름 일부만 입력해도 찾기
-- **2단계 탐색**: 메뉴 선택 → 프로젝트 선택으로 빠른 이동
+- **양방향 탐색**: 메뉴 먼저 또는 프로젝트 먼저, 원하는 순서로 이동
 - **빈도 기반 정렬**: 자주 가는 메뉴/프로젝트가 자동으로 상단에
 - **한글 지원**: "홈", "메인", "대시보드" 등 한글 별칭 검색 가능
 
@@ -45,8 +45,16 @@ git clone https://github.com/kyupid/whatap-shortcut.git
 
 ### 탐색 흐름
 
+첫 화면에서 **메뉴와 프로젝트를 통합 검색**할 수 있습니다. 원하는 방식으로 탐색하세요:
+
+**방법 1: 메뉴 먼저 선택**
 ```
-Cmd+K → 메뉴 검색 → Enter → 프로젝트 선택 → Enter → 페이지 이동
+Cmd+K → 메뉴 선택 → 프로젝트 선택 → 페이지 이동
+```
+
+**방법 2: 프로젝트 먼저 선택**
+```
+Cmd+K → 프로젝트 선택 → 메뉴 선택 → 페이지 이동
 ```
 
 Global 메뉴 (프로젝트 목록, 계정 관리 등)는 프로젝트 선택 없이 바로 이동합니다.
