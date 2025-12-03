@@ -157,8 +157,13 @@
 
       div.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
+        if (state.selectedIndex === index) return;
+        // 기존 선택 해제
+        const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
+        if (prev) prev.classList.remove('selected');
+        // 새 항목 선택
         state.selectedIndex = index;
-        renderItemResults();
+        div.classList.add('selected');
       });
       div.addEventListener('mousemove', () => {
         state.isKeyboardNavigation = false;
@@ -215,8 +220,13 @@
       div.addEventListener('click', () => navigateFromProject(menu));
       div.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
+        if (state.selectedIndex === index) return;
+        // 기존 선택 해제
+        const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
+        if (prev) prev.classList.remove('selected');
+        // 새 항목 선택
         state.selectedIndex = index;
-        renderMenusForProject();
+        div.classList.add('selected');
       });
       div.addEventListener('mousemove', () => {
         state.isKeyboardNavigation = false;
@@ -298,8 +308,13 @@
       item.addEventListener('click', () => navigateToProject(project));
       item.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
+        if (state.selectedIndex === index) return;
+        // 기존 선택 해제
+        const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
+        if (prev) prev.classList.remove('selected');
+        // 새 항목 선택
         state.selectedIndex = index;
-        renderProjectResults(projectList);
+        item.classList.add('selected');
       });
       item.addEventListener('mousemove', () => {
         state.isKeyboardNavigation = false;
