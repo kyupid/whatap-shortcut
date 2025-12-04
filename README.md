@@ -3,7 +3,7 @@
 WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메뉴를 탐색하는 Chrome 확장 프로그램입니다.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green?logo=googlechrome)
-![Version](https://img.shields.io/badge/version-1.0.5-blue)
+![Version](https://img.shields.io/badge/version-1.0.7-blue)
 
 ![Demo](demo.gif)
 
