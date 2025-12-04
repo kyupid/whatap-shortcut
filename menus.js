@@ -49,10 +49,29 @@ window.WhaTapQN = window.WhaTapQN || {};
 
   // 공통 메뉴 (모든 프로젝트 타입에서 사용 가능)
   QN.COMMON_MENUS = [
+    // Management (거의 모든 프로젝트에서 사용)
+    { name: '프로젝트 관리', path: '/management', category: 'Management' },
+    { name: '프로젝트 멤버', path: '/members', category: 'Management' },
+    { name: '에이전트 설치', path: '/install', category: 'Management' },
+    // Dashboard
+    { name: 'Flex 보드', path: '/flexboard', category: 'Dashboard' },
+    // Metrics
     { name: '보고서', path: '/flexible_report', category: 'Report' },
     { name: '메트릭스 조회', path: '/tag_count', category: 'Metrics' },
     { name: '메트릭스 차트', path: '/metrics_chart', category: 'Metrics' },
+    { name: '메트릭스 카운터', path: '/counter', category: 'Metrics' },
     { name: 'MXQL', path: '/mxql', category: 'Lab' },
+    // Event
+    { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
+    { name: '이벤트 규칙 V2', path: '/event/rules_v2', category: 'Event' },
+    { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
+    { name: '통합 유지보수', path: '/integrated_maintenance', category: 'Event' },
+    // Log
+    { name: '라이브 테일', path: '/liveTail', category: 'Log' },
+    { name: '로그 탐색기', path: '/logExplorer', category: 'Log' },
+    { name: '로그 검색', path: '/logSearch', category: 'Log' },
+    { name: '로그 설정', path: '/logSetting', category: 'Log' },
+    // OpenMetrics
     { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
     { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
     { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
@@ -173,11 +192,10 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '모니터링', path: '/monitoring', category: 'Dashboard' },
     { name: '인스턴스 모니터링', path: '/instance_monitoring', category: 'Dashboard' },
     { name: 'DB 인스턴스 맵', path: '/db_instance_map', category: 'Dashboard' },
-    { name: 'DB 대시보드', path: '/db_dashboard', category: 'Dashboard' },
+    { name: '멀티 인스턴스 모니터링', path: '/db_dashboard', category: 'Dashboard', aliases: ['멀티 인스턴스', 'multi instance'] },
     { name: 'DB 인스턴스 모니터링', path: '/db_instance_monitoring', category: 'Dashboard' },
     { name: 'RAC 모니터링', path: '/rac_monitoring', category: 'Dashboard' },
     { name: '버퍼풀 모니터링', path: '/buffer_pool_monitoring', category: 'Dashboard' },
-    { name: '멀티 인스턴스', path: '/multi_instance', category: 'Dashboard' },
     { name: '슬로우 쿼리', path: '/slow_query', category: 'Dashboard' },
     { name: 'DB 클러스터 토폴로지', path: '/dbClusterTopology', category: 'Dashboard' },
     { name: '클러스터 목록', path: '/cluster_list', category: 'Dashboard' },
