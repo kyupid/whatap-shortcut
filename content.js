@@ -576,8 +576,8 @@
 
   // 전역 키보드 이벤트
   document.addEventListener('keydown', (e) => {
-    // Cmd+K / Ctrl+K
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    // Cmd+K / Ctrl+K (e.code로 물리적 키 위치 확인 - 한/영, Caps Lock 무관)
+    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK') {
       e.preventDefault();
       if (state.modal && state.modal.classList.contains('visible')) {
         hideModal();

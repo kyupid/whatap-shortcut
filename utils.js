@@ -204,36 +204,46 @@
   // 메뉴 관련 함수
   // ============================================
 
-  // 모든 메뉴 가져오기 (빈도 기반 정렬)
+  // 모든 메뉴 가져오기 (빈도 기반 정렬, 중복 제거)
   QN.getAllMenus = function() {
     const allMenus = [];
+    const seenPaths = new Set(); // path 기준 중복 제거용
 
     // Global 메뉴
     QN.GLOBAL_MENUS.forEach(menu => {
-      allMenus.push({
-        ...menu,
-        productType: 'global',
-        fullPath: menu.path
-      });
-    });
-
-    // 공통 메뉴 (모든 프로젝트에서 사용 가능)
-    QN.COMMON_MENUS.forEach(menu => {
-      allMenus.push({
-        ...menu,
-        productType: 'common',
-        displayProductType: '공통'
-      });
-    });
-
-    // 제품별 메뉴
-    for (const [productType, menus] of Object.entries(QN.PRODUCT_MENUS)) {
-      menus.forEach(menu => {
+      if (!seenPaths.has(menu.path)) {
+        seenPaths.add(menu.path);
         allMenus.push({
           ...menu,
-          productType,
-          displayProductType: productType.toUpperCase()
+          productType: 'global',
+          fullPath: menu.path
         });
+      }
+    });
+
+    // 공통 메뉴 (모든 프로젝트에서 사용 가능) - 중복 시 공통으로 표시
+    QN.COMMON_MENUS.forEach(menu => {
+      if (!seenPaths.has(menu.path)) {
+        seenPaths.add(menu.path);
+        allMenus.push({
+          ...menu,
+          productType: 'common',
+          displayProductType: '공통'
+        });
+      }
+    });
+
+    // 제품별 메뉴 (중복 path는 건너뜀)
+    for (const [productType, menus] of Object.entries(QN.PRODUCT_MENUS)) {
+      menus.forEach(menu => {
+        if (!seenPaths.has(menu.path)) {
+          seenPaths.add(menu.path);
+          allMenus.push({
+            ...menu,
+            productType,
+            displayProductType: productType.toUpperCase()
+          });
+        }
       });
     }
 
