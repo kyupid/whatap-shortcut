@@ -2,8 +2,7 @@
 
 WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메뉴를 탐색하는 Chrome 확장 프로그램입니다.
 
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green?logo=googlechrome)
-![Version](https://img.shields.io/badge/version-1.0.7-blue)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/nbflhohmlplalpmbjmehebhklpakdnci?logo=googlechrome&label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/whatap-quick-navigation/nbflhohmlplalpmbjmehebhklpakdnci)
 
 ![Demo](demo.gif)
 
@@ -16,14 +15,9 @@ WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메
 
 ## 설치 방법
 
-### GitHub Release에서 설치
+### Chrome Web Store (권장)
 
-1. [Releases](https://github.com/kyupid/whatap-shortcut/releases) 페이지에서 `whatap-quick-nav.zip` 다운로드
-2. 압축 해제
-3. Chrome에서 `chrome://extensions` 접속
-4. 우측 상단 **개발자 모드** 활성화
-5. **압축해제된 확장 프로그램을 로드합니다** 클릭
-6. 압축 해제한 폴더 선택
+[Chrome Web Store에서 설치](https://chromewebstore.google.com/detail/whatap-quick-navigation/nbflhohmlplalpmbjmehebhklpakdnci)
 
 ### 소스에서 설치 (개발용)
 
