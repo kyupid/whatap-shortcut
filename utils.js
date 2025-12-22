@@ -325,10 +325,14 @@
     if (!query) return items;
 
     const lowerQuery = query.toLowerCase();
+    const isNumericQuery = /^\d+$/.test(query); // 숫자만 입력된 경우
+
     const scored = items.map(item => {
       let score = 0;
 
       if (item.itemType === 'project') {
+        // 숫자 검색 시 프로젝트 우선
+        if (isNumericQuery) score += 200;
         // 프로젝트 검색
         const name = item.name.toLowerCase();
         const pcode = String(item.pcode);
