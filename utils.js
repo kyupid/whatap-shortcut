@@ -332,31 +332,31 @@
 
       if (item.itemType === 'project') {
         // 숫자 검색 시 프로젝트 우선
-        if (isNumericQuery) score += 200;
+        if (isNumericQuery) score += 100;
         // 프로젝트 검색
         const name = item.name.toLowerCase();
         const pcode = String(item.pcode);
         const platform = (item.platform || '').toLowerCase();
         const productType = (item.productType || '').toLowerCase();
 
-        // pcode 매칭 (높은 점수)
-        if (pcode === lowerQuery) score += 150;
-        else if (pcode.startsWith(lowerQuery)) score += 120;
-        else if (pcode.includes(lowerQuery)) score += 80;
+        // pcode 매칭 (Tier 1: Exact match)
+        if (pcode === lowerQuery) score += 1000;
+        else if (pcode.startsWith(lowerQuery)) score += 500;
+        else if (pcode.includes(lowerQuery)) score += 200;
 
-        // 이름 매칭
-        if (name.startsWith(lowerQuery)) score += 100;
-        if (name.includes(lowerQuery)) score += 30;
+        // 이름 매칭 (Tier 2: Prefix match, Tier 3: Substring match)
+        if (name.startsWith(lowerQuery)) score += 400;
+        if (name.includes(lowerQuery)) score += 150;
 
-        // 플랫폼/productType 매칭
-        if (platform.startsWith(lowerQuery)) score += 50;
+        // 플랫폼/productType 매칭 (Tier 3)
+        if (platform.startsWith(lowerQuery)) score += 100;
         if (platform.includes(lowerQuery)) score += 20;
-        if (productType.startsWith(lowerQuery)) score += 50;
+        if (productType.startsWith(lowerQuery)) score += 100;
         if (productType.includes(lowerQuery)) score += 20;
 
-        // 빈도 가중치
+        // 빈도 가중치 (Tiebreaker, 최대 300점)
         const visitCount = QN.state.projectVisitCounts[item.pcode] || 0;
-        score += visitCount * 5;
+        score += Math.min(visitCount * 0.5, 300);
 
       } else {
         // 메뉴 검색
@@ -366,31 +366,33 @@
         const productType = (item.displayProductType || item.productType || '').toLowerCase();
         const aliases = item.aliases || [];
 
-        // 별칭 매칭 (높은 점수)
+        // 별칭 매칭 (Tier 1: Exact/Prefix match)
         for (const alias of aliases) {
-          if (alias.toLowerCase().startsWith(lowerQuery)) score += 120;
-          else if (alias.toLowerCase().includes(lowerQuery)) score += 80;
+          const lowerAlias = alias.toLowerCase();
+          if (lowerAlias === lowerQuery) score += 1000;
+          else if (lowerAlias.startsWith(lowerQuery)) score += 500;
+          else if (lowerAlias.includes(lowerQuery)) score += 80;
         }
 
-        // 정확히 시작하면 높은 점수
-        if (name.startsWith(lowerQuery)) score += 100;
-        if (category.startsWith(lowerQuery)) score += 50;
-        if (productType.startsWith(lowerQuery)) score += 50;
+        // 이름/카테고리 매칭 (Tier 2: Prefix match)
+        if (name.startsWith(lowerQuery)) score += 400;
+        if (category.startsWith(lowerQuery)) score += 200;
+        if (productType.startsWith(lowerQuery)) score += 200;
 
-        // 포함하면 중간 점수
-        if (name.includes(lowerQuery)) score += 30;
-        if (category.includes(lowerQuery)) score += 20;
-        if (path.includes(lowerQuery)) score += 10;
-        if (productType.includes(lowerQuery)) score += 20;
+        // 포함 매칭 (Tier 3: Substring match)
+        if (name.includes(lowerQuery)) score += 100;
+        if (category.includes(lowerQuery)) score += 50;
+        if (path.includes(lowerQuery)) score += 30;
+        if (productType.includes(lowerQuery)) score += 50;
 
-        // 각 단어의 첫 글자 매칭
+        // 각 단어의 첫 글자 매칭 (Tier 3)
         const words = name.split(/\s+/);
         const initials = words.map(w => w[0]).join('').toLowerCase();
-        if (initials.includes(lowerQuery)) score += 40;
+        if (initials.includes(lowerQuery)) score += 50;
 
-        // 빈도 가중치
+        // 빈도 가중치 (Tiebreaker, 최대 300점)
         const visitCount = QN.state.visitCounts[item.path] || 0;
-        score += visitCount * 5;
+        score += Math.min(visitCount * 0.5, 300);
       }
 
       return { item, score };
