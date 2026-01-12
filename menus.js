@@ -53,6 +53,7 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '프로젝트 관리', path: '/management', category: 'Management' },
     { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     { name: '에이전트 설치', path: '/install', category: 'Management' },
+    { name: '사용자 행위', path: '/userBehavior', category: 'Management' },
     // Dashboard
     { name: 'Flex 보드', path: '/flexboard', category: 'Dashboard' },
     // Metrics
@@ -60,10 +61,12 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '메트릭스 조회', path: '/tag_count', category: 'Metrics' },
     { name: '메트릭스 차트', path: '/metrics_chart', category: 'Metrics' },
     { name: '메트릭스 카운터', path: '/counter', category: 'Metrics' },
+    { name: '메트릭스 이상 탐지', path: '/ml/tagcount/prediction', category: 'Metrics' },
     { name: 'MXQL', path: '/mxql', category: 'Lab' },
     // Event
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 규칙 V2', path: '/event/rules_v2', category: 'Event' },
+    { name: '이벤트 수신 설정', path: '/event/config', category: 'Event' },
     { name: '이벤트 히스토리', path: '/event/history', category: 'Event' },
     { name: '통합 유지보수', path: '/integrated_maintenance', category: 'Event' },
     // Log
@@ -73,8 +76,8 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '로그 설정', path: '/logSetting', category: 'Log' },
     // OpenMetrics
     { name: 'OpenMX 에이전트 설치', path: '/openmx/agent/install', category: 'OpenMetrics' },
-    { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics' },
-    { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics' },
+    { name: 'OpenMX', path: '/openmx', category: 'OpenMetrics', aliases: ['OpenMetrics 탐색기'] },
+    { name: 'OpenMX 플러그인', path: '/openmx/plugin', category: 'OpenMetrics', aliases: ['템플릿 목록'] },
     { name: 'NGINX 플러그인', path: '/openmx/plugin/nginx', category: 'OpenMetrics' },
     { name: 'Istio 플러그인', path: '/openmx/plugin/istio', category: 'OpenMetrics' },
   ];
@@ -214,7 +217,7 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '세션 히스토리', path: '/session_history', category: 'Analysis' },
     { name: '대기 분석', path: '/wait_analysis', category: 'Analysis' },
     { name: '대기 통계', path: '/wait_stat', category: 'Analysis' },
-    { name: 'SQL 분석', path: '/sql_analysis', category: 'Analysis' },
+    { name: 'SQL Plan 분석', path: '/sql_analysis', category: 'Analysis' },
     { name: '오브젝트 정보', path: '/object_info', category: 'Analysis' },
     { name: '탑 SQL 비교', path: '/top_sql_comparison', category: 'Analysis' },
     { name: '메트릭스 차트', path: '/metrics_chart', category: 'Analysis' },
@@ -306,9 +309,6 @@ window.WhaTapQN = window.WhaTapQN || {};
     // Management
     { name: 'Kube 에이전트 목록', path: '/kube/agent/list', category: 'Management' },
     { name: '네임스페이스 관리', path: '/namespace/management', category: 'Management' },
-    { name: '에이전트 설치', path: '/install', category: 'Management' },
-    { name: '프로젝트 관리', path: '/management', category: 'Management' },
-    { name: '프로젝트 멤버', path: '/members', category: 'Management' },
     // Event
     { name: '이벤트 규칙', path: '/event/rules', category: 'Event' },
     { name: '이벤트 규칙 V2', path: '/event/rules_v2', category: 'Event' },
