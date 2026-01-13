@@ -39,6 +39,7 @@
         <div class="whatap-qn-footer">
           <span><kbd>↑</kbd><kbd>↓</kbd> 이동</span>
           <span><kbd>Enter</kbd> 선택</span>
+          <span><kbd>⌘</kbd><kbd>Enter</kbd> 새탭</span>
           <span><kbd>Backspace</kbd> 뒤로</span>
           <span><kbd>ESC</kbd> 닫기</span>
           <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침">↻</button>
@@ -125,7 +126,7 @@
             <span class="whatap-qn-pcode">#${item.pcode}</span>
           </div>
         `;
-        div.addEventListener('click', () => selectProjectFirst(item));
+        div.addEventListener('click', (e) => selectProjectFirst(item));
       } else {
         // 메뉴 렌더링
         const isCurrentMenu = item.path === currentMenuPath || item.fullPath === currentMenuPath;
@@ -152,7 +153,7 @@
             ${productBadge}
           </div>
         `;
-        div.addEventListener('click', () => selectMenu(item));
+        div.addEventListener('click', (e) => selectMenu(item, e.metaKey || e.ctrlKey));
       }
 
       div.addEventListener('mouseenter', () => {
@@ -217,7 +218,7 @@
           ${productBadge}
         </div>
       `;
-      div.addEventListener('click', () => navigateFromProject(menu));
+      div.addEventListener('click', (e) => navigateFromProject(menu, e.metaKey || e.ctrlKey));
       div.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
         if (state.selectedIndex === index) return;
@@ -305,7 +306,7 @@
           <span class="whatap-qn-pcode">#${project.pcode}</span>
         </div>
       `;
-      item.addEventListener('click', () => navigateToProject(project));
+      item.addEventListener('click', (e) => navigateToProject(project, e.metaKey || e.ctrlKey));
       item.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
         if (state.selectedIndex === index) return;
@@ -396,12 +397,14 @@
 
       case 'Enter':
         e.preventDefault();
+        const openInNewTab = e.metaKey || e.ctrlKey; // Cmd+Enter / Ctrl+Enter
+
         if (state.currentStep === 'menu' && state.filteredItems[state.selectedIndex]) {
           const item = state.filteredItems[state.selectedIndex];
           if (item.itemType === 'project') {
             selectProjectFirst(item);
           } else {
-            selectMenu(item);
+            selectMenu(item, openInNewTab);
           }
         } else if (state.currentStep === 'project') {
           const projectList = QN.getProjectListForMenu(state.selectedMenu);
@@ -430,14 +433,14 @@
           });
           const finalList = currentProject ? [currentProject, ...otherProjects] : otherProjects;
           if (finalList[state.selectedIndex]) {
-            navigateToProject(finalList[state.selectedIndex]);
+            navigateToProject(finalList[state.selectedIndex], openInNewTab);
           }
         } else if (state.currentStep === 'menu_for_project') {
           const menus = QN.getMenusForProductType(state.selectedProject.productType);
           const query = state.searchInput.value.trim();
           const filtered = query ? QN.fuzzySearch(query, menus) : menus;
           if (filtered[state.selectedIndex]) {
-            navigateFromProject(filtered[state.selectedIndex]);
+            navigateFromProject(filtered[state.selectedIndex], openInNewTab);
           }
         }
         break;
@@ -468,12 +471,17 @@
     }
   }
 
-  function selectMenu(menu) {
+  function selectMenu(menu, openInNewTab = false) {
     if (menu.productType === 'global') {
       // Global 메뉴는 바로 이동
       QN.saveVisitCount(menu.path);
-      window.location.href = menu.fullPath || menu.path;
-      hideModal();
+      const fullPath = menu.fullPath || menu.path;
+      if (openInNewTab) {
+        window.open(fullPath, '_blank');
+      } else {
+        window.location.href = fullPath;
+        hideModal();
+      }
     } else {
       // 프로젝트 선택 단계로 이동
       state.selectedMenu = menu;
@@ -499,7 +507,7 @@
     state.searchInput.focus();
   }
 
-  function navigateToProject(project) {
+  function navigateToProject(project, openInNewTab = false) {
     // 공통 메뉴면 프로젝트의 productType 사용, 아니면 메뉴의 productType 사용
     const urlProductType = state.selectedMenu.productType === 'common'
       ? QN.getUrlProductType(project.productType)
@@ -507,12 +515,17 @@
     const fullPath = `/v2/project/${urlProductType}/${project.pcode}${state.selectedMenu.path}`;
     QN.saveVisitCount(state.selectedMenu.path);
     QN.saveProjectVisitCount(project.pcode);
-    window.location.href = fullPath;
-    hideModal();
+
+    if (openInNewTab) {
+      window.open(fullPath, '_blank');
+    } else {
+      window.location.href = fullPath;
+      hideModal();
+    }
   }
 
   // 프로젝트 먼저 선택 후 메뉴 선택 → 이동
-  function navigateFromProject(menu) {
+  function navigateFromProject(menu, openInNewTab = false) {
     // 공통 메뉴면 프로젝트의 productType 사용
     const urlProductType = menu.productType === 'common'
       ? QN.getUrlProductType(state.selectedProject.productType)
@@ -520,8 +533,13 @@
     const fullPath = `/v2/project/${urlProductType}/${state.selectedProject.pcode}${menu.path}`;
     QN.saveVisitCount(menu.path);
     QN.saveProjectVisitCount(state.selectedProject.pcode);
-    window.location.href = fullPath;
-    hideModal();
+
+    if (openInNewTab) {
+      window.open(fullPath, '_blank');
+    } else {
+      window.location.href = fullPath;
+      hideModal();
+    }
   }
 
   function goBackToMenuStep() {
