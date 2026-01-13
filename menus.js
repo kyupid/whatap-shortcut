@@ -230,7 +230,7 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: 'MySQL 통계', path: '/mysql_stat', category: 'Statistics' },
     { name: '프로시저 통계', path: '/procedure_stat', category: 'Statistics' },
     // Size Increase
-    { name: '테이블 정보', path: '/size_increase/table_info', category: 'Size' },
+    { name: '테이블 사이즈 증감', path: '/size_increase/table_info', category: 'Size', aliases: ['테이블 정보'] },
     { name: '테이블스페이스', path: '/size_increase/table_space', category: 'Size' },
     { name: 'DB 사이즈', path: '/size_increase/db_size', category: 'Size' },
     { name: 'SGA', path: '/size_increase/sga', category: 'Size' },
