@@ -5,6 +5,17 @@ All notable changes to WhaTap Quick Navigation will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-01-13
+
+### Added
+- **Open in New Tab**: Cmd+Enter (Mac) / Ctrl+Enter (Windows) now opens selected menu/project in a new tab while keeping the modal open
+- Cmd+Click / Ctrl+Click support for mouse interactions to open in new tab
+- Visual hint in footer showing the new tab shortcut (⌘+Enter)
+
+### Changed
+- Renamed "테이블 정보" to "테이블 사이즈 증감" in Database menus
+- Added "테이블 정보" as a search alias for backward compatibility
+
 ## [1.0.8] - 2026-01-08
 
 ### Changed
