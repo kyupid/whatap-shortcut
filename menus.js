@@ -225,7 +225,7 @@ window.WhaTapQN = window.WhaTapQN || {};
     { name: '장기 메트릭스', path: '/metrics_longterm', category: 'Analysis' },
     // Statistics
     { name: 'SQL 통계', path: '/statistics_sql', category: 'Statistics' },
-    { name: '탑 SQL', path: '/top_sql', category: 'Statistics' },
+    { name: 'Top SQL', path: '/top_sql', category: 'Statistics', aliases: ['탑 SQL'] },
     { name: 'PostgreSQL 통계', path: '/pg_stat', category: 'Statistics' },
     { name: 'MySQL 통계', path: '/mysql_stat', category: 'Statistics' },
     { name: '프로시저 통계', path: '/procedure_stat', category: 'Statistics' },
