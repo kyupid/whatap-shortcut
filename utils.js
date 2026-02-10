@@ -71,6 +71,87 @@
     }
   };
 
+  // 방문 기록 전체 초기화
+  QN.resetAllVisitData = function() {
+    QN.state.visitCounts = {};
+    QN.state.projectVisitCounts = {};
+    QN.state.recentVisits = [];
+    try {
+      localStorage.removeItem('whatap_qn_visits');
+      localStorage.removeItem('whatap_qn_project_visits');
+      localStorage.removeItem('whatap_qn_recent_visits');
+    } catch (e) {}
+  };
+
+  // 삭제된 프로젝트 기록 정리
+  QN.cleanupDeletedProjects = function() {
+    const validPcodes = new Set(Object.keys(QN.state.projects));
+    if (validPcodes.size === 0) return; // 프로젝트 미로드 시 정리 안 함
+
+    // projectVisitCounts에서 존재하지 않는 pcode 제거
+    let cleaned = false;
+    for (const pcode of Object.keys(QN.state.projectVisitCounts)) {
+      if (!validPcodes.has(pcode)) {
+        delete QN.state.projectVisitCounts[pcode];
+        cleaned = true;
+      }
+    }
+    if (cleaned) {
+      try {
+        localStorage.setItem('whatap_qn_project_visits', JSON.stringify(QN.state.projectVisitCounts));
+      } catch (e) {}
+    }
+
+    // recentVisits에서 존재하지 않는 pcode 제거
+    const before = QN.state.recentVisits.length;
+    QN.state.recentVisits = QN.state.recentVisits.filter(v =>
+      !v.pcode || validPcodes.has(String(v.pcode))
+    );
+    if (QN.state.recentVisits.length !== before) {
+      try {
+        localStorage.setItem('whatap_qn_recent_visits', JSON.stringify(QN.state.recentVisits));
+      } catch (e) {}
+    }
+
+    // pinnedProjects에서 존재하지 않는 pcode 제거
+    const beforePinned = QN.state.pinnedProjects.length;
+    QN.state.pinnedProjects = QN.state.pinnedProjects.filter(p => validPcodes.has(p));
+    if (QN.state.pinnedProjects.length !== beforePinned) {
+      try {
+        localStorage.setItem('whatap_qn_pinned_projects', JSON.stringify(QN.state.pinnedProjects));
+      } catch (e) {}
+    }
+  };
+
+  // 방문 빈도 자동 감쇠 (1주일마다 50% 감쇠)
+  const DECAY_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 1주
+  const DECAY_FACTOR = 0.5;
+
+  QN.applyVisitDecay = function() {
+    try {
+      const lastDecay = localStorage.getItem('whatap_qn_last_decay');
+      const lastDecayTime = lastDecay ? Number(lastDecay) : Date.now();
+
+      if (Date.now() - lastDecayTime < DECAY_INTERVAL) return;
+
+      // 메뉴 방문 감쇠
+      for (const path of Object.keys(QN.state.visitCounts)) {
+        QN.state.visitCounts[path] = Math.floor(QN.state.visitCounts[path] * DECAY_FACTOR);
+        if (QN.state.visitCounts[path] <= 0) delete QN.state.visitCounts[path];
+      }
+      localStorage.setItem('whatap_qn_visits', JSON.stringify(QN.state.visitCounts));
+
+      // 프로젝트 방문 감쇠
+      for (const pcode of Object.keys(QN.state.projectVisitCounts)) {
+        QN.state.projectVisitCounts[pcode] = Math.floor(QN.state.projectVisitCounts[pcode] * DECAY_FACTOR);
+        if (QN.state.projectVisitCounts[pcode] <= 0) delete QN.state.projectVisitCounts[pcode];
+      }
+      localStorage.setItem('whatap_qn_project_visits', JSON.stringify(QN.state.projectVisitCounts));
+
+      localStorage.setItem('whatap_qn_last_decay', String(Date.now()));
+    } catch (e) {}
+  };
+
   // 최근 방문 기록 로드
   const MAX_RECENT_VISITS = 10;
 

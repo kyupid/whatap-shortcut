@@ -43,6 +43,7 @@
           <span><kbd>⌘</kbd><kbd>D</kbd> 핀</span>
           <span><kbd>Backspace</kbd> 뒤로</span>
           <span><kbd>ESC</kbd> 닫기</span>
+          <button class="whatap-qn-reset-btn" title="방문 기록 초기화">✕</button>
           <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침">↻</button>
         </div>
       </div>
@@ -54,10 +55,26 @@
     state.resultsList = state.modal.querySelector('.whatap-qn-results');
     const backdrop = state.modal.querySelector('.whatap-qn-backdrop');
     const refreshBtn = state.modal.querySelector('.whatap-qn-refresh-btn');
+    const resetBtn = state.modal.querySelector('.whatap-qn-reset-btn');
 
     state.searchInput.addEventListener('input', handleSearch);
     state.searchInput.addEventListener('keydown', handleKeydown);
     backdrop.addEventListener('click', hideModal);
+
+    // 초기화 버튼 클릭 핸들러
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('방문 기록을 모두 초기화하시겠습니까?\n(핀 설정은 유지됩니다)')) return;
+      QN.resetAllVisitData();
+      // 현재 단계에 따라 목록 갱신
+      if (state.currentStep === 'menu') {
+        state.filteredItems = QN.getAllItems();
+        renderItemResults();
+      } else if (state.currentStep === 'project') {
+        renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
+      } else if (state.currentStep === 'menu_for_project') {
+        renderMenusForProject();
+      }
+    });
 
     // 새로고침 버튼 클릭 핸들러
     refreshBtn.addEventListener('click', async () => {
@@ -688,7 +705,10 @@
   QN.loadProjectVisitCounts();
   QN.loadRecentVisits();
   QN.loadPinned();
-  QN.loadProjects();
+  QN.applyVisitDecay();
+  QN.loadProjects().then(() => {
+    QN.cleanupDeletedProjects();
+  });
 
   console.log('WhaTap Quick Navigation loaded. Press Cmd+K (Mac) or Ctrl+K (Windows) to open.');
 

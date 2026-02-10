@@ -286,8 +286,27 @@ body[data-theme="light"] #whatap-quick-nav-modal {
   background: var(--qn-accent-bg-footer);
 }
 
-.whatap-qn-refresh-btn {
+.whatap-qn-reset-btn {
   margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--qn-text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+}
+
+.whatap-qn-reset-btn:hover {
+  opacity: 1;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.whatap-qn-refresh-btn {
+  margin-left: 0;
   background: none;
   border: none;
   font-size: 14px;
