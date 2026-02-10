@@ -105,6 +105,63 @@
     const currentMenuPath = QN.getCurrentMenuPath();
     const query = state.searchInput ? state.searchInput.value.trim() : '';
 
+    // 검색어 없을 때 최근 방문 섹션 표시
+    if (!query && state.recentVisits && state.recentVisits.length > 0) {
+      const header = document.createElement('div');
+      header.className = 'whatap-qn-section-header';
+      header.textContent = '최근 방문';
+      state.resultsList.appendChild(header);
+
+      const recentMenus = QN.getRecentMenuItems();
+      recentMenus.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
+
+        const productBadge = item.productType && item.productType !== 'global'
+          ? `<span class="whatap-qn-badge">${item.displayProductType || item.productType.toUpperCase()}</span>`
+          : '';
+
+        const projectInfo = item.projectName
+          ? `<span class="whatap-qn-item-category">${QN.escapeHtml(item.projectName)}</span>`
+          : '';
+
+        div.innerHTML = `
+          <div class="whatap-qn-item-content">
+            <span class="whatap-qn-item-name">${QN.escapeHtml(item.name)}</span>
+            ${projectInfo}
+          </div>
+          <div class="whatap-qn-item-meta">
+            <span class="whatap-qn-recent-badge">최근</span>
+            ${productBadge}
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          if (item.fullPath) {
+            window.location.href = item.fullPath;
+            hideModal();
+          } else if (item.itemType === 'menu') {
+            selectMenu(item);
+          }
+        });
+        div.addEventListener('mouseenter', () => {
+          if (state.isKeyboardNavigation) return;
+          if (state.selectedIndex === index) return;
+          const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
+          if (prev) prev.classList.remove('selected');
+          state.selectedIndex = index;
+          div.classList.add('selected');
+        });
+        div.addEventListener('mousemove', () => { state.isKeyboardNavigation = false; });
+        state.resultsList.appendChild(div);
+      });
+
+      // 전체 메뉴 섹션 헤더
+      const allHeader = document.createElement('div');
+      allHeader.className = 'whatap-qn-section-header';
+      allHeader.textContent = '전체 메뉴';
+      state.resultsList.appendChild(allHeader);
+    }
+
     state.filteredItems.slice(0, 50).forEach((item, index) => {
       const div = document.createElement('div');
       div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
@@ -428,6 +485,7 @@
     if (menu.productType === 'global') {
       // Global 메뉴는 바로 이동
       QN.saveVisitCount(menu.path);
+      QN.saveRecentVisit(menu.path, 'menu');
       const fullPath = menu.fullPath || menu.path;
       if (openInNewTab) {
         window.open(fullPath, '_blank');
@@ -468,6 +526,7 @@
     const fullPath = `/v2/project/${urlProductType}/${project.pcode}${state.selectedMenu.path}`;
     QN.saveVisitCount(state.selectedMenu.path);
     QN.saveProjectVisitCount(project.pcode);
+    QN.saveRecentVisit(state.selectedMenu.path, 'menu', project.pcode);
 
     if (openInNewTab) {
       window.open(fullPath, '_blank');
@@ -486,6 +545,7 @@
     const fullPath = `/v2/project/${urlProductType}/${state.selectedProject.pcode}${menu.path}`;
     QN.saveVisitCount(menu.path);
     QN.saveProjectVisitCount(state.selectedProject.pcode);
+    QN.saveRecentVisit(menu.path, 'menu', state.selectedProject.pcode);
 
     if (openInNewTab) {
       window.open(fullPath, '_blank');
@@ -580,6 +640,7 @@
   // 초기 로드
   QN.loadVisitCounts();
   QN.loadProjectVisitCounts();
+  QN.loadRecentVisits();
   QN.loadProjects();
 
   console.log('WhaTap Quick Navigation loaded. Press Cmd+K (Mac) or Ctrl+K (Windows) to open.');

@@ -20,7 +20,8 @@
     selectedMenu: null,
     selectedProject: null,
     visitCounts: {},
-    projectVisitCounts: {}
+    projectVisitCounts: {},
+    recentVisits: [] // [{ path, timestamp, type: 'menu'|'project', pcode? }]
   };
 
   // ============================================
@@ -65,6 +66,62 @@
     } catch (e) {
       console.error('Failed to save project visit count:', e);
     }
+  };
+
+  // 최근 방문 기록 로드
+  const MAX_RECENT_VISITS = 10;
+
+  QN.loadRecentVisits = function() {
+    try {
+      const data = localStorage.getItem('whatap_qn_recent_visits');
+      if (data) QN.state.recentVisits = JSON.parse(data);
+    } catch (e) {
+      QN.state.recentVisits = [];
+    }
+  };
+
+  // 최근 방문 기록 저장
+  QN.saveRecentVisit = function(path, type, pcode) {
+    // 중복 제거 (같은 path+pcode 조합)
+    QN.state.recentVisits = QN.state.recentVisits.filter(v =>
+      !(v.path === path && v.pcode === pcode)
+    );
+    // 최신 항목을 앞에 추가
+    QN.state.recentVisits.unshift({ path, timestamp: Date.now(), type, pcode: pcode || null });
+    // 최대 개수 유지
+    QN.state.recentVisits = QN.state.recentVisits.slice(0, MAX_RECENT_VISITS);
+    try {
+      localStorage.setItem('whatap_qn_recent_visits', JSON.stringify(QN.state.recentVisits));
+    } catch (e) {}
+  };
+
+  // 최근 방문 메뉴 항목 조합 (표시용)
+  QN.getRecentMenuItems = function() {
+    const allMenus = QN.getAllMenus();
+    const result = [];
+
+    for (const visit of QN.state.recentVisits) {
+      const menu = allMenus.find(m => m.path === visit.path);
+      if (!menu) continue;
+
+      const item = { ...menu, itemType: 'menu' };
+
+      // 프로젝트 정보 추가
+      if (visit.pcode && QN.state.projects[visit.pcode]) {
+        const project = QN.state.projects[visit.pcode];
+        item.projectName = project.name;
+        const urlProductType = menu.productType === 'common'
+          ? QN.getUrlProductType(project.productType)
+          : menu.productType;
+        item.fullPath = `/v2/project/${urlProductType}/${visit.pcode}${menu.path}`;
+      } else if (menu.productType === 'global') {
+        item.fullPath = menu.fullPath || menu.path;
+      }
+
+      result.push(item);
+    }
+
+    return result;
   };
 
   // ============================================

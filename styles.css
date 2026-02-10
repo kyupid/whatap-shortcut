@@ -312,8 +312,31 @@
   }
 }
 
-/* Highlight matching text (optional enhancement) */
+/* Highlight matching text */
 .whatap-qn-highlight {
   color: var(--whatap-primary-300);
   font-weight: 600;
+}
+
+/* Section headers (최근 방문, 전체 메뉴 등) */
+.whatap-qn-section-header {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--whatap-primary-200);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+/* 최근 방문 배지 */
+.whatap-qn-recent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--whatap-primary-200);
+  background: rgba(87, 132, 248, 0.1);
+  border-radius: 10px;
 }
