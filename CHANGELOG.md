@@ -5,6 +5,25 @@ All notable changes to WhaTap Quick Navigation will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-10
+
+### Added
+- **검색 결과 하이라이팅**: 검색어와 매칭되는 텍스트를 시각적으로 강조 표시 (#4)
+- **프로젝트 퍼지 검색**: 프로젝트 검색에도 스코어링 기반 퍼지 검색 적용 (#5)
+- **컨텍스트 기반 메뉴 정렬**: 현재 접속 중인 프로젝트 타입의 메뉴를 상단에 우선 표시 (#6)
+- **최근 방문 섹션**: 검색어 없을 때 모달 상단에 최근 방문 메뉴 표시 (#7)
+- **즐겨찾기(핀) 기능**: Cmd+D로 메뉴/프로젝트를 핀 고정하여 최상단 표시 (#8)
+- **프로젝트 그룹별 표시**: API 그룹 정보를 활용하여 프로젝트를 그룹별로 묶어 표시 (#9)
+- **방문 기록 관리**: 초기화 버튼, 1주 간격 자동 감쇠, 삭제된 프로젝트 자동 정리 (#11)
+
+### Changed
+- **다크/라이트 테마 지원**: 하드코딩된 색상을 CSS 변수로 분리, WhaTap 테마에 맞춰 자동 전환 (#10)
+- 모달 너비 640px → 720px 확대
+- Footer 레이아웃 최적화 (gap/font 축소, flex-wrap 적용)
+
+### Fixed
+- `renderProjectResults`의 `currentProject`/`currentPcode` 미정의 참조 버그 수정
+
 ## [1.0.9] - 2026-01-13
 
 ### Added
