@@ -77,6 +77,12 @@
     return match ? match[1] : null;
   };
 
+  // 현재 URL에서 productType 추출 (URL path 기준)
+  QN.getCurrentProductType = function() {
+    const match = window.location.pathname.match(/\/v2\/project\/([^/]+)\/\d+/);
+    return match ? match[1] : null;
+  };
+
   // 현재 URL에서 메뉴 path 추출
   QN.getCurrentMenuPath = function() {
     const pathname = window.location.pathname;
@@ -247,8 +253,16 @@
       });
     }
 
-    // 빈도 기반 정렬
+    // 현재 컨텍스트 + 빈도 기반 정렬
+    const currentUrlProductType = QN.getCurrentProductType();
     allMenus.sort((a, b) => {
+      // 현재 productType 메뉴 우선
+      if (currentUrlProductType) {
+        const aMatch = (a.productType === currentUrlProductType || a.productType === 'common') ? 1 : 0;
+        const bMatch = (b.productType === currentUrlProductType || b.productType === 'common') ? 1 : 0;
+        if (aMatch !== bMatch) return bMatch - aMatch;
+      }
+      // 같은 그룹 내 빈도 기반 정렬
       const countA = QN.state.visitCounts[a.path] || 0;
       const countB = QN.state.visitCounts[b.path] || 0;
       return countB - countA;
