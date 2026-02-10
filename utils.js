@@ -404,6 +404,78 @@
       .map(item => item.item);
   };
 
+  // 프로젝트 퍼지 검색 (스코어링 기반)
+  QN.fuzzySearchProjects = function(query, projects) {
+    if (!query) return projects;
+
+    const lowerQuery = query.toLowerCase();
+    const isNumericQuery = /^\d+$/.test(query);
+
+    const scored = projects.map(project => {
+      let score = 0;
+      const name = project.name.toLowerCase();
+      const pcode = String(project.pcode);
+      const platform = (project.platform || '').toLowerCase();
+      const productType = (project.productType || '').toLowerCase();
+
+      // pcode 매칭
+      if (pcode === lowerQuery) score += 1000;
+      else if (pcode.startsWith(lowerQuery)) score += 500;
+      else if (pcode.includes(lowerQuery)) score += 200;
+
+      // 이름 매칭
+      if (name === lowerQuery) score += 900;
+      else if (name.startsWith(lowerQuery)) score += 400;
+      if (name.includes(lowerQuery)) score += 150;
+
+      // 각 단어의 첫 글자 매칭
+      const words = name.split(/\s+/);
+      const initials = words.map(w => w[0]).join('').toLowerCase();
+      if (initials.includes(lowerQuery)) score += 50;
+
+      // 플랫폼/productType 매칭
+      if (platform.startsWith(lowerQuery)) score += 100;
+      if (platform.includes(lowerQuery)) score += 20;
+      if (productType.startsWith(lowerQuery)) score += 100;
+      if (productType.includes(lowerQuery)) score += 20;
+
+      // 숫자 검색 시 pcode 매칭 가중
+      if (isNumericQuery && score > 0) score += 100;
+
+      return { project, score };
+    });
+
+    return scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(s => s.project);
+  };
+
+  // 프로젝트 필터링 + 정렬 (현재 프로젝트 최상단, 퍼지 검색 적용)
+  QN.filterAndSortProjects = function(projectList, query) {
+    let filtered = query ? QN.fuzzySearchProjects(query, projectList) : projectList;
+
+    const currentPcode = QN.getCurrentProjectPcode();
+    let currentProject = null;
+    let otherProjects = filtered;
+
+    if (currentPcode) {
+      currentProject = filtered.find(p => String(p.pcode) === currentPcode);
+      otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
+    }
+
+    // 검색어 없을 때만 빈도순 정렬 (퍼지 검색 시 스코어 순 유지)
+    if (!query) {
+      otherProjects.sort((a, b) => {
+        const countA = QN.state.projectVisitCounts[a.pcode] || 0;
+        const countB = QN.state.projectVisitCounts[b.pcode] || 0;
+        return countB - countA;
+      });
+    }
+
+    return currentProject ? [currentProject, ...otherProjects] : otherProjects;
+  };
+
   // 텍스트에서 query와 매칭되는 부분을 하이라이트 HTML로 변환
   QN.highlightMatch = function(text, query) {
     if (!query || !text) return QN.escapeHtml(text || '');

@@ -248,41 +248,12 @@
     }
 
     const query = state.searchInput.value.trim();
-    let filtered = projectList;
+    const finalList = QN.filterAndSortProjects(projectList, query);
 
-    if (query) {
-      const lowerQuery = query.toLowerCase();
-      filtered = projectList.filter(p =>
-        p.name.toLowerCase().includes(lowerQuery) ||
-        String(p.pcode).includes(lowerQuery) ||
-        (p.platform || '').toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    if (filtered.length === 0) {
+    if (finalList.length === 0) {
       state.resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
       return;
     }
-
-    // 현재 프로젝트 pcode 가져오기
-    const currentPcode = QN.getCurrentProjectPcode();
-    let currentProject = null;
-    let otherProjects = filtered;
-
-    if (currentPcode) {
-      currentProject = filtered.find(p => String(p.pcode) === currentPcode);
-      otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
-    }
-
-    // 나머지 프로젝트 빈도수로 정렬
-    otherProjects.sort((a, b) => {
-      const countA = state.projectVisitCounts[a.pcode] || 0;
-      const countB = state.projectVisitCounts[b.pcode] || 0;
-      return countB - countA;
-    });
-
-    // 현재 프로젝트를 최상단에, 나머지는 그 뒤에
-    const finalList = currentProject ? [currentProject, ...otherProjects] : otherProjects;
 
     finalList.forEach((project, index) => {
       const item = document.createElement('div');
@@ -362,7 +333,9 @@
     if (state.currentStep === 'menu') {
       maxIndex = Math.min(state.filteredItems.length, 50) - 1;
     } else if (state.currentStep === 'project') {
-      maxIndex = QN.getProjectListForMenu(state.selectedMenu).length - 1;
+      const projectQuery = state.searchInput.value.trim();
+      const projectFinalList = QN.filterAndSortProjects(QN.getProjectListForMenu(state.selectedMenu), projectQuery);
+      maxIndex = projectFinalList.length - 1;
     } else if (state.currentStep === 'menu_for_project') {
       const menus = QN.getMenusForProductType(state.selectedProject.productType);
       const query = state.searchInput.value.trim();
@@ -410,30 +383,8 @@
           }
         } else if (state.currentStep === 'project') {
           const projectList = QN.getProjectListForMenu(state.selectedMenu);
-          const query = state.searchInput.value.trim().toLowerCase();
-          let filtered = projectList;
-          if (query) {
-            filtered = projectList.filter(p =>
-              p.name.toLowerCase().includes(query) ||
-              String(p.pcode).includes(query) ||
-              (p.platform || '').toLowerCase().includes(query)
-            );
-          }
-          // 현재 프로젝트 최상단 고정 (renderProjectResults와 동일)
-          const currentPcode = QN.getCurrentProjectPcode();
-          let currentProject = null;
-          let otherProjects = filtered;
-          if (currentPcode) {
-            currentProject = filtered.find(p => String(p.pcode) === currentPcode);
-            otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
-          }
-          // 나머지 프로젝트 빈도순 정렬
-          otherProjects.sort((a, b) => {
-            const countA = state.projectVisitCounts[a.pcode] || 0;
-            const countB = state.projectVisitCounts[b.pcode] || 0;
-            return countB - countA;
-          });
-          const finalList = currentProject ? [currentProject, ...otherProjects] : otherProjects;
+          const query = state.searchInput.value.trim();
+          const finalList = QN.filterAndSortProjects(projectList, query);
           if (finalList[state.selectedIndex]) {
             navigateToProject(finalList[state.selectedIndex], openInNewTab);
           }
