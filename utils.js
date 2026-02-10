@@ -23,7 +23,8 @@
     projectVisitCounts: {},
     recentVisits: [], // [{ path, timestamp, type: 'menu'|'project', pcode? }]
     pinnedMenus: [],   // [path, ...]
-    pinnedProjects: [] // [pcode, ...]
+    pinnedProjects: [], // [pcode, ...]
+    groups: {}          // { gcode: { name, projectCodes: [pcode, ...] } }
   };
 
   // ============================================
@@ -217,6 +218,7 @@
 
           if (Date.now() - timestamp < PROJECT_CACHE_TTL) {
             QN.state.projects = data;
+            if (parsed.groups) QN.state.groups = parsed.groups;
             return; // 캐시 사용
           }
         }
@@ -232,10 +234,22 @@
       if (data.ok && data.data && data.data.projects) {
         QN.state.projects = data.data.projects;
 
+        // 그룹 정보 저장
+        if (data.data.groups) {
+          QN.state.groups = {};
+          for (const [gcode, group] of Object.entries(data.data.groups)) {
+            QN.state.groups[gcode] = {
+              name: group.name || group.groupName || `Group ${gcode}`,
+              projectCodes: group.projectCodes || []
+            };
+          }
+        }
+
         // localStorage 저장 (타임스탬프 포함)
         try {
           localStorage.setItem('whatap_qn_projects', JSON.stringify({
             data: QN.state.projects,
+            groups: QN.state.groups,
             timestamp: Date.now()
           }));
         } catch (storageError) {
@@ -250,6 +264,7 @@
         if (cached) {
           const parsed = JSON.parse(cached);
           QN.state.projects = parsed.data || parsed;
+          if (parsed.groups) QN.state.groups = parsed.groups;
         }
       } catch (e2) {
         console.error('Failed to load cached projects:', e2);
@@ -271,6 +286,17 @@
     return urlType;
   };
 
+  // 프로젝트의 그룹명 조회
+  QN.getProjectGroupName = function(pcode) {
+    const pcodeStr = String(pcode);
+    for (const [gcode, group] of Object.entries(QN.state.groups)) {
+      if (group.projectCodes && group.projectCodes.includes(Number(pcodeStr))) {
+        return group.name;
+      }
+    }
+    return null;
+  };
+
   // productType으로 프로젝트 필터링
   QN.getProjectsForProductType = function(urlProductType) {
     const result = [];
@@ -281,7 +307,8 @@
           pcode: project.pcode,
           name: project.name,
           platform: project.platform,
-          productType: project.productType
+          productType: project.productType,
+          groupName: QN.getProjectGroupName(project.pcode)
         });
       }
     }
@@ -296,7 +323,8 @@
         pcode: project.pcode,
         name: project.name,
         platform: project.platform,
-        productType: project.productType
+        productType: project.productType,
+        groupName: QN.getProjectGroupName(project.pcode)
       });
     }
     return result;
@@ -587,13 +615,17 @@
       otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
     }
 
-    // 검색어 없을 때만 핀 + 빈도순 정렬 (퍼지 검색 시 스코어 순 유지)
+    // 검색어 없을 때만 핀 + 그룹 + 빈도순 정렬 (퍼지 검색 시 스코어 순 유지)
     if (!query) {
       otherProjects.sort((a, b) => {
         // 핀된 프로젝트 우선
         const aPinned = QN.isProjectPinned(a.pcode) ? 1 : 0;
         const bPinned = QN.isProjectPinned(b.pcode) ? 1 : 0;
         if (aPinned !== bPinned) return bPinned - aPinned;
+        // 그룹별 정렬
+        const aGroup = a.groupName || '';
+        const bGroup = b.groupName || '';
+        if (aGroup !== bGroup) return aGroup.localeCompare(bGroup);
         // 빈도순 정렬
         const countA = QN.state.projectVisitCounts[a.pcode] || 0;
         const countB = QN.state.projectVisitCounts[b.pcode] || 0;

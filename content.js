@@ -317,11 +317,23 @@
       return;
     }
 
+    const currentPcode = QN.getCurrentProjectPcode();
+    let lastGroupName = null;
+
     finalList.forEach((project, index) => {
+      // 검색어 없을 때 그룹 헤더 표시
+      if (!query && project.groupName !== lastGroupName) {
+        lastGroupName = project.groupName;
+        const header = document.createElement('div');
+        header.className = 'whatap-qn-section-header';
+        header.textContent = project.groupName || '미분류';
+        state.resultsList.appendChild(header);
+      }
+
       const item = document.createElement('div');
       item.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
 
-      const isCurrentProject = currentProject && String(project.pcode) === currentPcode;
+      const isCurrentProject = currentPcode && String(project.pcode) === currentPcode;
       const visitCount = state.projectVisitCounts[project.pcode] || 0;
       const visitBadge = visitCount > 0
         ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
@@ -330,11 +342,15 @@
         ? '<span class="whatap-qn-current-badge">현재 프로젝트</span>'
         : '';
       const pinIcon = QN.isProjectPinned(project.pcode) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
+      const groupBadge = query && project.groupName
+        ? `<span class="whatap-qn-item-category">${QN.escapeHtml(project.groupName)}</span>`
+        : '';
 
       item.innerHTML = `
         <div class="whatap-qn-item-content">
           <span class="whatap-qn-item-name">${QN.highlightMatch(project.name, query)}</span>
           <span class="whatap-qn-item-category">${QN.highlightMatch(project.platform || project.productType, query)}</span>
+          ${groupBadge}
         </div>
         <div class="whatap-qn-item-meta">
           ${pinIcon}
@@ -347,10 +363,8 @@
       item.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
         if (state.selectedIndex === index) return;
-        // 기존 선택 해제
         const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
         if (prev) prev.classList.remove('selected');
-        // 새 항목 선택
         state.selectedIndex = index;
         item.classList.add('selected');
       });
