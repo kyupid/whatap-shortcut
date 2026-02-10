@@ -404,4 +404,20 @@
       .map(item => item.item);
   };
 
+  // 텍스트에서 query와 매칭되는 부분을 하이라이트 HTML로 변환
+  QN.highlightMatch = function(text, query) {
+    if (!query || !text) return QN.escapeHtml(text || '');
+    const escaped = QN.escapeHtml(text);
+    const escapedQuery = QN.escapeHtml(query);
+    const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return escaped.replace(regex, '<span class="whatap-qn-highlight">$1</span>');
+  };
+
+  // HTML 이스케이프
+  QN.escapeHtml = function(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
 })(window.WhaTapQN);

@@ -103,6 +103,7 @@
     }
 
     const currentMenuPath = QN.getCurrentMenuPath();
+    const query = state.searchInput ? state.searchInput.value.trim() : '';
 
     state.filteredItems.slice(0, 50).forEach((item, index) => {
       const div = document.createElement('div');
@@ -118,8 +119,8 @@
         div.innerHTML = `
           <div class="whatap-qn-item-content">
             <span class="whatap-qn-item-icon">📁</span>
-            <span class="whatap-qn-item-name">${item.name}</span>
-            <span class="whatap-qn-item-category">${item.platform || item.productType}</span>
+            <span class="whatap-qn-item-name">${QN.highlightMatch(item.name, query)}</span>
+            <span class="whatap-qn-item-category">${QN.highlightMatch(item.platform || item.productType, query)}</span>
           </div>
           <div class="whatap-qn-item-meta">
             ${visitBadge}
@@ -144,8 +145,8 @@
 
         div.innerHTML = `
           <div class="whatap-qn-item-content">
-            <span class="whatap-qn-item-name">${item.name}</span>
-            <span class="whatap-qn-item-category">${item.category || ''}</span>
+            <span class="whatap-qn-item-name">${QN.highlightMatch(item.name, query)}</span>
+            <span class="whatap-qn-item-category">${QN.highlightMatch(item.category || '', query)}</span>
           </div>
           <div class="whatap-qn-item-meta">
             ${currentPageBadge}
@@ -209,8 +210,8 @@
 
       div.innerHTML = `
         <div class="whatap-qn-item-content">
-          <span class="whatap-qn-item-name">${menu.name}</span>
-          <span class="whatap-qn-item-category">${menu.category || ''}</span>
+          <span class="whatap-qn-item-name">${QN.highlightMatch(menu.name, query)}</span>
+          <span class="whatap-qn-item-category">${QN.highlightMatch(menu.category || '', query)}</span>
         </div>
         <div class="whatap-qn-item-meta">
           ${currentPageBadge}
@@ -246,14 +247,15 @@
       return;
     }
 
-    const query = state.searchInput.value.trim().toLowerCase();
+    const query = state.searchInput.value.trim();
     let filtered = projectList;
 
     if (query) {
+      const lowerQuery = query.toLowerCase();
       filtered = projectList.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        String(p.pcode).includes(query) ||
-        (p.platform || '').toLowerCase().includes(query)
+        p.name.toLowerCase().includes(lowerQuery) ||
+        String(p.pcode).includes(lowerQuery) ||
+        (p.platform || '').toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -297,8 +299,8 @@
 
       item.innerHTML = `
         <div class="whatap-qn-item-content">
-          <span class="whatap-qn-item-name">${project.name}</span>
-          <span class="whatap-qn-item-category">${project.platform || project.productType}</span>
+          <span class="whatap-qn-item-name">${QN.highlightMatch(project.name, query)}</span>
+          <span class="whatap-qn-item-category">${QN.highlightMatch(project.platform || project.productType, query)}</span>
         </div>
         <div class="whatap-qn-item-meta">
           ${currentBadge}
