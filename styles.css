@@ -9,6 +9,47 @@
   --whatap-primary-600: #001F65;
 }
 
+/* Theme variables - Dark (default) */
+#whatap-quick-nav-modal {
+  --qn-bg: #1e2d4a;
+  --qn-text: #fff;
+  --qn-text-secondary: var(--whatap-primary-200);
+  --qn-backdrop: rgba(0, 0, 0, 0.3);
+  --qn-border: rgba(87, 132, 248, 0.15);
+  --qn-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(87, 132, 248, 0.2);
+  --qn-hover: rgba(87, 132, 248, 0.15);
+  --qn-selected: rgba(87, 132, 248, 0.25);
+  --qn-selected-border: rgba(87, 132, 248, 0.3);
+  --qn-accent-bg: rgba(87, 132, 248, 0.15);
+  --qn-accent-bg-light: rgba(87, 132, 248, 0.1);
+  --qn-accent-bg-subtle: rgba(87, 132, 248, 0.03);
+  --qn-accent-bg-footer: rgba(87, 132, 248, 0.08);
+  --qn-badge-bg: rgba(87, 132, 248, 0.3);
+  --qn-scrollbar: rgba(87, 132, 248, 0.3);
+  --qn-scrollbar-hover: rgba(87, 132, 248, 0.5);
+}
+
+/* Theme variables - Light (WhaTap light theme) */
+body:not(.theme-dark) #whatap-quick-nav-modal,
+body[data-theme="light"] #whatap-quick-nav-modal {
+  --qn-bg: #ffffff;
+  --qn-text: #1e293b;
+  --qn-text-secondary: #64748b;
+  --qn-backdrop: rgba(0, 0, 0, 0.15);
+  --qn-border: rgba(0, 0, 0, 0.08);
+  --qn-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  --qn-hover: rgba(87, 132, 248, 0.08);
+  --qn-selected: rgba(87, 132, 248, 0.12);
+  --qn-selected-border: rgba(87, 132, 248, 0.25);
+  --qn-accent-bg: rgba(87, 132, 248, 0.1);
+  --qn-accent-bg-light: rgba(87, 132, 248, 0.06);
+  --qn-accent-bg-subtle: rgba(87, 132, 248, 0.02);
+  --qn-accent-bg-footer: rgba(87, 132, 248, 0.04);
+  --qn-badge-bg: rgba(87, 132, 248, 0.15);
+  --qn-scrollbar: rgba(0, 0, 0, 0.15);
+  --qn-scrollbar-hover: rgba(0, 0, 0, 0.25);
+}
+
 #whatap-quick-nav-modal {
   display: none;
   position: fixed;
@@ -30,7 +71,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--qn-backdrop);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -42,9 +83,9 @@
   transform: translateX(-50%);
   width: 640px;
   max-width: 90vw;
-  background: #1e2d4a;
+  background: var(--qn-bg);
   border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(87, 132, 248, 0.2);
+  box-shadow: var(--qn-shadow);
   overflow: hidden;
 }
 
@@ -55,11 +96,11 @@
 
 .whatap-qn-breadcrumb {
   font-size: 13px;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
 }
 
 .whatap-qn-crumb {
-  color: var(--whatap-primary-100);
+  color: var(--whatap-primary-300);
   font-weight: 500;
 }
 
@@ -67,8 +108,8 @@
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(87, 132, 248, 0.15);
-  background: rgba(87, 132, 248, 0.03);
+  border-bottom: 1px solid var(--qn-border);
+  background: var(--qn-accent-bg-subtle);
 }
 
 .whatap-qn-search-icon {
@@ -83,13 +124,13 @@
   border: none;
   background: transparent;
   font-size: 16px;
-  color: #fff;
+  color: var(--qn-text);
   margin-left: 12px;
   outline: none;
 }
 
 .whatap-qn-input::placeholder {
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
   opacity: 0.6;
 }
 
@@ -100,10 +141,10 @@
   padding: 4px 8px;
   font-size: 12px;
   font-family: inherit;
-  color: var(--whatap-primary-200);
-  background: rgba(87, 132, 248, 0.15);
+  color: var(--qn-text-secondary);
+  background: var(--qn-accent-bg);
   border-radius: 4px;
-  border: 1px solid rgba(87, 132, 248, 0.2);
+  border: 1px solid var(--qn-border);
 }
 
 .whatap-qn-results {
@@ -121,18 +162,18 @@
 }
 
 .whatap-qn-results::-webkit-scrollbar-thumb {
-  background: rgba(87, 132, 248, 0.3);
+  background: var(--qn-scrollbar);
   border-radius: 4px;
 }
 
 .whatap-qn-results::-webkit-scrollbar-thumb:hover {
-  background: rgba(87, 132, 248, 0.5);
+  background: var(--qn-scrollbar-hover);
 }
 
 .whatap-qn-empty {
   padding: 32px;
   text-align: center;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
   font-size: 14px;
 }
 
@@ -148,12 +189,12 @@
 
 .whatap-qn-item:hover,
 .whatap-qn-item.selected {
-  background: rgba(87, 132, 248, 0.15);
+  background: var(--qn-hover);
 }
 
 .whatap-qn-item.selected {
-  background: rgba(87, 132, 248, 0.25);
-  box-shadow: inset 0 0 0 1px rgba(87, 132, 248, 0.3);
+  background: var(--qn-selected);
+  box-shadow: inset 0 0 0 1px var(--qn-selected-border);
 }
 
 .whatap-qn-item-content {
@@ -172,7 +213,7 @@
 .whatap-qn-item-name {
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--qn-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,7 +222,7 @@
 
 .whatap-qn-item-category {
   font-size: 12px;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
 }
 
 .whatap-qn-item-meta {
@@ -199,8 +240,8 @@
   padding: 3px 8px;
   font-size: 10px;
   font-weight: 600;
-  color: var(--whatap-primary-100);
-  background: rgba(87, 132, 248, 0.3);
+  color: var(--whatap-primary-300);
+  background: var(--qn-badge-bg);
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -214,8 +255,8 @@
   padding: 2px 6px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--whatap-primary-200);
-  background: rgba(87, 132, 248, 0.1);
+  color: var(--qn-text-secondary);
+  background: var(--qn-accent-bg-light);
   border-radius: 10px;
 }
 
@@ -241,8 +282,8 @@
   align-items: center;
   gap: 16px;
   padding: 12px 20px;
-  border-top: 1px solid rgba(87, 132, 248, 0.15);
-  background: rgba(87, 132, 248, 0.08);
+  border-top: 1px solid var(--qn-border);
+  background: var(--qn-accent-bg-footer);
 }
 
 .whatap-qn-refresh-btn {
@@ -250,7 +291,7 @@
   background: none;
   border: none;
   font-size: 14px;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
@@ -260,7 +301,7 @@
 
 .whatap-qn-refresh-btn:hover {
   opacity: 1;
-  background: rgba(87, 132, 248, 0.15);
+  background: var(--qn-accent-bg);
 }
 
 .whatap-qn-refresh-btn.loading {
@@ -279,7 +320,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
 }
 
 .whatap-qn-footer kbd {
@@ -290,10 +331,10 @@
   padding: 2px 6px;
   font-size: 11px;
   font-family: inherit;
-  color: var(--whatap-primary-100);
-  background: rgba(87, 132, 248, 0.15);
+  color: var(--whatap-primary-300);
+  background: var(--qn-accent-bg);
   border-radius: 4px;
-  border: 1px solid rgba(87, 132, 248, 0.2);
+  border: 1px solid var(--qn-border);
 }
 
 /* Animation */
@@ -323,7 +364,7 @@
   padding: 8px 16px 4px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   opacity: 0.7;
@@ -332,7 +373,7 @@
 /* 핀 아이콘 */
 .whatap-qn-pin-icon {
   font-size: 12px;
-  color: var(--whatap-primary-200);
+  color: var(--qn-text-secondary);
   opacity: 0.4;
 }
 
@@ -348,7 +389,7 @@
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--whatap-primary-200);
-  background: rgba(87, 132, 248, 0.1);
+  color: var(--qn-text-secondary);
+  background: var(--qn-accent-bg-light);
   border-radius: 10px;
 }
