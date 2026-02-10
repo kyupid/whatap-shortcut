@@ -21,7 +21,9 @@
     selectedProject: null,
     visitCounts: {},
     projectVisitCounts: {},
-    recentVisits: [] // [{ path, timestamp, type: 'menu'|'project', pcode? }]
+    recentVisits: [], // [{ path, timestamp, type: 'menu'|'project', pcode? }]
+    pinnedMenus: [],   // [path, ...]
+    pinnedProjects: [] // [pcode, ...]
   };
 
   // ============================================
@@ -93,6 +95,51 @@
     try {
       localStorage.setItem('whatap_qn_recent_visits', JSON.stringify(QN.state.recentVisits));
     } catch (e) {}
+  };
+
+  // 즐겨찾기(핀) 로드
+  QN.loadPinned = function() {
+    try {
+      const menus = localStorage.getItem('whatap_qn_pinned_menus');
+      if (menus) QN.state.pinnedMenus = JSON.parse(menus);
+      const projects = localStorage.getItem('whatap_qn_pinned_projects');
+      if (projects) QN.state.pinnedProjects = JSON.parse(projects);
+    } catch (e) {}
+  };
+
+  // 메뉴 핀 토글
+  QN.togglePinMenu = function(path) {
+    const idx = QN.state.pinnedMenus.indexOf(path);
+    if (idx >= 0) {
+      QN.state.pinnedMenus.splice(idx, 1);
+    } else {
+      QN.state.pinnedMenus.push(path);
+    }
+    try {
+      localStorage.setItem('whatap_qn_pinned_menus', JSON.stringify(QN.state.pinnedMenus));
+    } catch (e) {}
+  };
+
+  // 프로젝트 핀 토글
+  QN.togglePinProject = function(pcode) {
+    const pcodeStr = String(pcode);
+    const idx = QN.state.pinnedProjects.indexOf(pcodeStr);
+    if (idx >= 0) {
+      QN.state.pinnedProjects.splice(idx, 1);
+    } else {
+      QN.state.pinnedProjects.push(pcodeStr);
+    }
+    try {
+      localStorage.setItem('whatap_qn_pinned_projects', JSON.stringify(QN.state.pinnedProjects));
+    } catch (e) {}
+  };
+
+  QN.isMenuPinned = function(path) {
+    return QN.state.pinnedMenus.includes(path);
+  };
+
+  QN.isProjectPinned = function(pcode) {
+    return QN.state.pinnedProjects.includes(String(pcode));
   };
 
   // 최근 방문 메뉴 항목 조합 (표시용)
@@ -310,9 +357,14 @@
       });
     }
 
-    // 현재 컨텍스트 + 빈도 기반 정렬
+    // 핀 → 컨텍스트 → 빈도 기반 정렬
     const currentUrlProductType = QN.getCurrentProductType();
     allMenus.sort((a, b) => {
+      // 핀된 메뉴 최우선
+      const aPinned = QN.isMenuPinned(a.path) ? 1 : 0;
+      const bPinned = QN.isMenuPinned(b.path) ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+
       // 현재 productType 메뉴 우선
       if (currentUrlProductType) {
         const aMatch = (a.productType === currentUrlProductType || a.productType === 'common') ? 1 : 0;
@@ -535,9 +587,14 @@
       otherProjects = filtered.filter(p => String(p.pcode) !== currentPcode);
     }
 
-    // 검색어 없을 때만 빈도순 정렬 (퍼지 검색 시 스코어 순 유지)
+    // 검색어 없을 때만 핀 + 빈도순 정렬 (퍼지 검색 시 스코어 순 유지)
     if (!query) {
       otherProjects.sort((a, b) => {
+        // 핀된 프로젝트 우선
+        const aPinned = QN.isProjectPinned(a.pcode) ? 1 : 0;
+        const bPinned = QN.isProjectPinned(b.pcode) ? 1 : 0;
+        if (aPinned !== bPinned) return bPinned - aPinned;
+        // 빈도순 정렬
         const countA = QN.state.projectVisitCounts[a.pcode] || 0;
         const countB = QN.state.projectVisitCounts[b.pcode] || 0;
         return countB - countA;

@@ -40,6 +40,7 @@
           <span><kbd>↑</kbd><kbd>↓</kbd> 이동</span>
           <span><kbd>Enter</kbd> 선택</span>
           <span><kbd>⌘</kbd><kbd>Enter</kbd> 새탭</span>
+          <span><kbd>⌘</kbd><kbd>D</kbd> 핀</span>
           <span><kbd>Backspace</kbd> 뒤로</span>
           <span><kbd>ESC</kbd> 닫기</span>
           <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침">↻</button>
@@ -172,6 +173,7 @@
         const visitBadge = visitCount > 0
           ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
           : '';
+        const pinIcon = QN.isProjectPinned(item.pcode) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
 
         div.innerHTML = `
           <div class="whatap-qn-item-content">
@@ -180,6 +182,7 @@
             <span class="whatap-qn-item-category">${QN.highlightMatch(item.platform || item.productType, query)}</span>
           </div>
           <div class="whatap-qn-item-meta">
+            ${pinIcon}
             ${visitBadge}
             <span class="whatap-qn-pcode">#${item.pcode}</span>
           </div>
@@ -199,6 +202,7 @@
         const visitBadge = state.visitCounts[item.path]
           ? `<span class="whatap-qn-visit-count">${state.visitCounts[item.path]}</span>`
           : '';
+        const pinIcon = QN.isMenuPinned(item.path) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
 
         div.innerHTML = `
           <div class="whatap-qn-item-content">
@@ -206,6 +210,7 @@
             <span class="whatap-qn-item-category">${QN.highlightMatch(item.category || '', query)}</span>
           </div>
           <div class="whatap-qn-item-meta">
+            ${pinIcon}
             ${currentPageBadge}
             ${visitBadge}
             ${productBadge}
@@ -324,6 +329,7 @@
       const currentBadge = isCurrentProject
         ? '<span class="whatap-qn-current-badge">현재 프로젝트</span>'
         : '';
+      const pinIcon = QN.isProjectPinned(project.pcode) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
 
       item.innerHTML = `
         <div class="whatap-qn-item-content">
@@ -331,6 +337,7 @@
           <span class="whatap-qn-item-category">${QN.highlightMatch(project.platform || project.productType, query)}</span>
         </div>
         <div class="whatap-qn-item-meta">
+          ${pinIcon}
           ${currentBadge}
           ${visitBadge}
           <span class="whatap-qn-pcode">#${project.pcode}</span>
@@ -385,6 +392,31 @@
   function handleKeydown(e) {
     // 한글 IME 조합 중이면 무시 (한글 입력 버그 방지)
     if (e.isComposing || e.keyCode === 229) return;
+
+    // Cmd+D / Ctrl+D: 핀 토글
+    if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+      e.preventDefault();
+      if (state.currentStep === 'menu' && state.filteredItems[state.selectedIndex]) {
+        const item = state.filteredItems[state.selectedIndex];
+        if (item.itemType === 'project') {
+          QN.togglePinProject(item.pcode);
+        } else {
+          QN.togglePinMenu(item.path);
+        }
+        // 목록 재정렬 후 리렌더링
+        state.filteredItems = QN.fuzzySearch(state.searchInput.value.trim(), QN.getAllItems());
+        renderItemResults();
+      } else if (state.currentStep === 'project') {
+        const projectList = QN.getProjectListForMenu(state.selectedMenu);
+        const query = state.searchInput.value.trim();
+        const finalList = QN.filterAndSortProjects(projectList, query);
+        if (finalList[state.selectedIndex]) {
+          QN.togglePinProject(finalList[state.selectedIndex].pcode);
+          renderProjectResults(projectList);
+        }
+      }
+      return;
+    }
 
     let maxIndex = 0;
     if (state.currentStep === 'menu') {
@@ -641,6 +673,7 @@
   QN.loadVisitCounts();
   QN.loadProjectVisitCounts();
   QN.loadRecentVisits();
+  QN.loadPinned();
   QN.loadProjects();
 
   console.log('WhaTap Quick Navigation loaded. Press Cmd+K (Mac) or Ctrl+K (Windows) to open.');
