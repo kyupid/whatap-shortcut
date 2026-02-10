@@ -123,6 +123,8 @@
     const currentMenuPath = QN.getCurrentMenuPath();
     const query = state.searchInput ? state.searchInput.value.trim() : '';
 
+    state.renderedRecentItems = [];
+
     // 검색어 없을 때 최근 방문 섹션 표시
     if (!query && state.recentVisits && state.recentVisits.length > 0) {
       const header = document.createElement('div');
@@ -131,6 +133,7 @@
       state.resultsList.appendChild(header);
 
       const recentMenus = QN.getRecentMenuItems();
+      state.renderedRecentItems = recentMenus;
       recentMenus.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
@@ -143,12 +146,15 @@
           ? `<span class="whatap-qn-item-category">${QN.escapeHtml(item.projectName)}</span>`
           : '';
 
+        const pinIcon = QN.isMenuPinned(item.path) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
+
         div.innerHTML = `
           <div class="whatap-qn-item-content">
             <span class="whatap-qn-item-name">${QN.escapeHtml(item.name)}</span>
             ${projectInfo}
           </div>
           <div class="whatap-qn-item-meta">
+            ${pinIcon}
             <span class="whatap-qn-recent-badge">최근</span>
             ${productBadge}
           </div>
@@ -180,7 +186,9 @@
       state.resultsList.appendChild(allHeader);
     }
 
-    state.filteredItems.slice(0, 50).forEach((item, index) => {
+    const recentOffset = state.renderedRecentItems.length;
+    state.filteredItems.slice(0, 50).forEach((item, idx) => {
+      const index = recentOffset + idx;
       const div = document.createElement('div');
       div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
 
@@ -337,7 +345,7 @@
     const currentPcode = QN.getCurrentProjectPcode();
     let lastGroupName = null;
 
-    finalList.forEach((project, index) => {
+    finalList.slice(0, 50).forEach((project, index) => {
       // 검색어 없을 때 그룹 헤더 표시
       if (!query && project.groupName !== lastGroupName) {
         lastGroupName = project.groupName;
@@ -427,16 +435,24 @@
     // Cmd+D / Ctrl+D: 핀 토글
     if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
       e.preventDefault();
-      if (state.currentStep === 'menu' && state.filteredItems[state.selectedIndex]) {
-        const item = state.filteredItems[state.selectedIndex];
-        if (item.itemType === 'project') {
-          QN.togglePinProject(item.pcode);
+      if (state.currentStep === 'menu') {
+        const recentCount = state.renderedRecentItems ? state.renderedRecentItems.length : 0;
+        let item;
+        if (state.selectedIndex < recentCount) {
+          item = state.renderedRecentItems[state.selectedIndex];
         } else {
-          QN.togglePinMenu(item.path);
+          item = state.filteredItems[state.selectedIndex - recentCount];
         }
-        // 목록 재정렬 후 리렌더링
-        state.filteredItems = QN.fuzzySearch(state.searchInput.value.trim(), QN.getAllItems());
-        renderItemResults();
+        if (item) {
+          if (item.itemType === 'project') {
+            QN.togglePinProject(item.pcode);
+          } else {
+            QN.togglePinMenu(item.path);
+          }
+          // 목록 재정렬 후 리렌더링
+          state.filteredItems = QN.fuzzySearch(state.searchInput.value.trim(), QN.getAllItems());
+          renderItemResults();
+        }
       } else if (state.currentStep === 'project') {
         const projectList = QN.getProjectListForMenu(state.selectedMenu);
         const query = state.searchInput.value.trim();
@@ -449,19 +465,7 @@
       return;
     }
 
-    let maxIndex = 0;
-    if (state.currentStep === 'menu') {
-      maxIndex = Math.min(state.filteredItems.length, 50) - 1;
-    } else if (state.currentStep === 'project') {
-      const projectQuery = state.searchInput.value.trim();
-      const projectFinalList = QN.filterAndSortProjects(QN.getProjectListForMenu(state.selectedMenu), projectQuery);
-      maxIndex = projectFinalList.length - 1;
-    } else if (state.currentStep === 'menu_for_project') {
-      const menus = QN.getMenusForProductType(state.selectedProject.productType);
-      const query = state.searchInput.value.trim();
-      const filtered = query ? QN.fuzzySearch(query, menus) : menus;
-      maxIndex = Math.min(filtered.length, 50) - 1;
-    }
+    const maxIndex = state.resultsList.querySelectorAll('.whatap-qn-item').length - 1;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -494,12 +498,29 @@
         e.preventDefault();
         const openInNewTab = e.metaKey || e.ctrlKey; // Cmd+Enter / Ctrl+Enter
 
-        if (state.currentStep === 'menu' && state.filteredItems[state.selectedIndex]) {
-          const item = state.filteredItems[state.selectedIndex];
-          if (item.itemType === 'project') {
-            selectProjectFirst(item);
+        if (state.currentStep === 'menu') {
+          const recentCount = state.renderedRecentItems ? state.renderedRecentItems.length : 0;
+          if (state.selectedIndex < recentCount) {
+            const item = state.renderedRecentItems[state.selectedIndex];
+            if (item.fullPath) {
+              if (openInNewTab) {
+                window.open(item.fullPath, '_blank');
+              } else {
+                window.location.href = item.fullPath;
+                hideModal();
+              }
+            } else {
+              selectMenu(item, openInNewTab);
+            }
           } else {
-            selectMenu(item, openInNewTab);
+            const item = state.filteredItems[state.selectedIndex - recentCount];
+            if (item) {
+              if (item.itemType === 'project') {
+                selectProjectFirst(item);
+              } else {
+                selectMenu(item, openInNewTab);
+              }
+            }
           }
         } else if (state.currentStep === 'project') {
           const projectList = QN.getProjectListForMenu(state.selectedMenu);
@@ -635,8 +656,20 @@
   // 모달 표시/숨기기
   // ============================================
 
+  function detectTheme() {
+    const bg = getComputedStyle(document.body).backgroundColor;
+    const match = bg.match(/\d+/g);
+    if (match) {
+      const [r, g, b] = match.map(Number);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.5 ? 'light' : 'dark';
+    }
+    return 'dark';
+  }
+
   function showModal() {
     createModal();
+    state.modal.classList.toggle('whatap-qn-light', detectTheme() === 'light');
     state.modal.classList.add('visible');
     state.currentStep = 'menu';
     state.selectedMenu = null;

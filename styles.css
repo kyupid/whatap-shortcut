@@ -30,8 +30,7 @@
 }
 
 /* Theme variables - Light (WhaTap light theme) */
-body:not(.theme-dark) #whatap-quick-nav-modal,
-body[data-theme="light"] #whatap-quick-nav-modal {
+#whatap-quick-nav-modal.whatap-qn-light {
   --qn-bg: #ffffff;
   --qn-text: #1e293b;
   --qn-text-secondary: #64748b;

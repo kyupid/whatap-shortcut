@@ -5,6 +5,20 @@ All notable changes to WhaTap Quick Navigation will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-02-10
+
+### Added
+- **fzf 스타일 퍼지 검색**: 문자 순서 기반 매칭 추가 (예: "starbrp" → "starbucks-rp-*")
+- **fzf 매칭 하이라이트**: 비연속 매칭 문자도 개별 하이라이트 표시
+- **최근 방문 핀 아이콘**: 최근 방문 섹션에서도 핀 상태 표시
+
+### Fixed
+- **최근 방문 항목 Enter 키 동작 안 함**: 최근 방문 섹션과 전체 메뉴 섹션의 인덱스 충돌로 키보드 선택이 잘못된 항목에 적용되던 버그 수정
+- **프로젝트 선택 화면 렉/멈춤**: `getProjectGroupName`이 매 프로젝트마다 전체 그룹을 순회(O(P×G))하던 것을 룩업맵(O(1))으로 최적화
+- **프로젝트 목록 렌더링 제한**: `renderProjectResults`에 최대 50개 제한 추가하여 대량 프로젝트 환경에서 DOM 렌더링 성능 개선
+- **키입력 시 불필요한 재계산 제거**: 매 키다운마다 전체 프로젝트 리스트를 재생성하던 maxIndex 계산을 DOM 기반으로 변경
+- **다크모드 감지 오류**: CSS 클래스 의존에서 body 배경색 luminance 기반 감지로 변경
+
 ## [1.1.0] - 2026-02-10
 
 ### Added

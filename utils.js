@@ -300,6 +300,7 @@
           if (Date.now() - timestamp < PROJECT_CACHE_TTL) {
             QN.state.projects = data;
             if (parsed.groups) QN.state.groups = parsed.groups;
+            _groupLookup = null; // 룩업맵 갱신
             return; // 캐시 사용
           }
         }
@@ -326,6 +327,8 @@
           }
         }
 
+        _groupLookup = null; // 룩업맵 갱신
+
         // localStorage 저장 (타임스탬프 포함)
         try {
           localStorage.setItem('whatap_qn_projects', JSON.stringify({
@@ -346,6 +349,7 @@
           const parsed = JSON.parse(cached);
           QN.state.projects = parsed.data || parsed;
           if (parsed.groups) QN.state.groups = parsed.groups;
+          _groupLookup = null;
         }
       } catch (e2) {
         console.error('Failed to load cached projects:', e2);
@@ -367,15 +371,21 @@
     return urlType;
   };
 
-  // 프로젝트의 그룹명 조회
-  QN.getProjectGroupName = function(pcode) {
-    const pcodeStr = String(pcode);
+  // 프로젝트의 그룹명 조회 (룩업맵 캐시)
+  let _groupLookup = null;
+  QN.buildGroupLookup = function() {
+    _groupLookup = {};
     for (const [gcode, group] of Object.entries(QN.state.groups)) {
-      if (group.projectCodes && group.projectCodes.includes(Number(pcodeStr))) {
-        return group.name;
+      if (group.projectCodes) {
+        for (const pc of group.projectCodes) {
+          _groupLookup[pc] = group.name;
+        }
       }
     }
-    return null;
+  };
+  QN.getProjectGroupName = function(pcode) {
+    if (!_groupLookup) QN.buildGroupLookup();
+    return _groupLookup[Number(pcode)] || null;
   };
 
   // productType으로 프로젝트 필터링
@@ -552,6 +562,25 @@
   // 검색 함수
   // ============================================
 
+  // fzf 스타일 퍼지 매칭: 쿼리 문자가 순서대로 존재하면 매칭
+  QN.fzfScore = function(query, text) {
+    if (!query || !text) return 0;
+    const q = query.toLowerCase();
+    const t = text.toLowerCase();
+    let qi = 0, score = 0, consecutive = 0, lastIdx = -2;
+    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+      if (t[ti] === q[qi]) {
+        score += 1;
+        if (ti === lastIdx + 1) { consecutive++; score += consecutive * 2; }
+        else { consecutive = 0; }
+        if (ti === 0 || /[-_ ./]/.test(t[ti - 1])) score += 5;
+        lastIdx = ti;
+        qi++;
+      }
+    }
+    return qi === q.length ? score : 0;
+  };
+
   // 퍼지 검색 (메뉴 + 프로젝트 통합)
   QN.fuzzySearch = function(query, items) {
     if (!query) return items;
@@ -585,6 +614,12 @@
         if (platform.includes(lowerQuery)) score += 20;
         if (productType.startsWith(lowerQuery)) score += 100;
         if (productType.includes(lowerQuery)) score += 20;
+
+        // fzf 퍼지 매칭 (Tier 4: 순서 기반)
+        if (score === 0) {
+          const fzf = QN.fzfScore(lowerQuery, name);
+          if (fzf > 0) score += Math.min(fzf, 80);
+        }
 
         // 빈도 가중치 (Tiebreaker, 최대 300점)
         const visitCount = QN.state.projectVisitCounts[item.pcode] || 0;
@@ -621,6 +656,12 @@
         const words = name.split(/\s+/);
         const initials = words.map(w => w[0]).join('').toLowerCase();
         if (initials.includes(lowerQuery)) score += 50;
+
+        // fzf 퍼지 매칭 (Tier 4: 순서 기반)
+        if (score === 0) {
+          const fzf = Math.max(QN.fzfScore(lowerQuery, name), QN.fzfScore(lowerQuery, path));
+          if (fzf > 0) score += Math.min(fzf, 80);
+        }
 
         // 빈도 가중치 (Tiebreaker, 최대 300점)
         const visitCount = QN.state.visitCounts[item.path] || 0;
@@ -671,6 +712,12 @@
       if (productType.startsWith(lowerQuery)) score += 100;
       if (productType.includes(lowerQuery)) score += 20;
 
+      // fzf 퍼지 매칭 (Tier 4: 순서 기반)
+      if (score === 0) {
+        const fzf = QN.fzfScore(lowerQuery, name);
+        if (fzf > 0) score += Math.min(fzf, 80);
+      }
+
       // 숫자 검색 시 pcode 매칭 가중
       if (isNumericQuery && score > 0) score += 100;
 
@@ -720,10 +767,35 @@
   // 텍스트에서 query와 매칭되는 부분을 하이라이트 HTML로 변환
   QN.highlightMatch = function(text, query) {
     if (!query || !text) return QN.escapeHtml(text || '');
-    const escaped = QN.escapeHtml(text);
-    const escapedQuery = QN.escapeHtml(query);
-    const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return escaped.replace(regex, '<span class="whatap-qn-highlight">$1</span>');
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+
+    // substring 매칭이면 기존 방식
+    if (lowerText.includes(lowerQuery)) {
+      const escaped = QN.escapeHtml(text);
+      const escapedQuery = QN.escapeHtml(query);
+      const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return escaped.replace(regex, '<span class="whatap-qn-highlight">$1</span>');
+    }
+
+    // fzf 스타일: 매칭 위치 찾기
+    const matches = new Set();
+    let qi = 0;
+    for (let ti = 0; ti < lowerText.length && qi < lowerQuery.length; ti++) {
+      if (lowerText[ti] === lowerQuery[qi]) { matches.add(ti); qi++; }
+    }
+    if (qi < lowerQuery.length) return QN.escapeHtml(text);
+
+    // 연속 매칭을 하나의 span으로 묶어서 출력
+    const esc = c => c.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    let result = '', inHL = false;
+    for (let i = 0; i < text.length; i++) {
+      if (matches.has(i) && !inHL) { result += '<span class="whatap-qn-highlight">'; inHL = true; }
+      else if (!matches.has(i) && inHL) { result += '</span>'; inHL = false; }
+      result += esc(text[i]);
+    }
+    if (inHL) result += '</span>';
+    return result;
   };
 
   // HTML 이스케이프
