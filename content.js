@@ -105,9 +105,9 @@
     if (state.currentStep === 'menu') {
       breadcrumb.textContent = '';
     } else if (state.currentStep === 'project' && state.selectedMenu) {
-      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${state.selectedMenu.name}</span> → 프로젝트 선택`;
+      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${QN.escapeHtml(state.selectedMenu.name)}</span> → 프로젝트 선택`;
     } else if (state.currentStep === 'menu_for_project' && state.selectedProject) {
-      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${state.selectedProject.name}</span> → 메뉴 선택`;
+      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${QN.escapeHtml(state.selectedProject.name)}</span> → 메뉴 선택`;
     }
   }
 
@@ -139,7 +139,7 @@
         div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
 
         const productBadge = item.productType && item.productType !== 'global'
-          ? `<span class="whatap-qn-badge">${item.displayProductType || item.productType.toUpperCase()}</span>`
+          ? `<span class="whatap-qn-badge">${QN.escapeHtml(item.displayProductType || item.productType.toUpperCase())}</span>`
           : '';
 
         const projectInfo = item.projectName
@@ -221,7 +221,7 @@
           : '';
 
         const productBadge = item.productType !== 'global'
-          ? `<span class="whatap-qn-badge">${item.displayProductType || item.productType.toUpperCase()}</span>`
+          ? `<span class="whatap-qn-badge">${QN.escapeHtml(item.displayProductType || item.productType.toUpperCase())}</span>`
           : '';
 
         const visitBadge = state.visitCounts[item.path]
@@ -288,7 +288,7 @@
         : '';
 
       const productBadge = menu.productType !== 'global'
-        ? `<span class="whatap-qn-badge">${menu.displayProductType || menu.productType.toUpperCase()}</span>`
+        ? `<span class="whatap-qn-badge">${QN.escapeHtml(menu.displayProductType || menu.productType.toUpperCase())}</span>`
         : '';
 
       const visitBadge = state.visitCounts[menu.path]
