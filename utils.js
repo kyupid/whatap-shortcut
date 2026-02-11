@@ -24,7 +24,8 @@
     recentVisits: [], // [{ path, timestamp, type: 'menu'|'project', pcode? }]
     pinnedMenus: [],   // [path, ...]
     pinnedProjects: [], // [pcode, ...]
-    groups: {}          // { gcode: { name, projectCodes: [pcode, ...] } }
+    groups: {},         // { gcode: { name, projectCodes: [pcode, ...] } }
+    agents: {}          // { pcode: [{ oid, oname, ip, isActive, alias, initial }] }
   };
 
   // ============================================
@@ -121,6 +122,16 @@
         localStorage.setItem('whatap_qn_pinned_projects', JSON.stringify(QN.state.pinnedProjects));
       } catch (e) {}
     }
+
+    // agents에서 존재하지 않는 pcode 제거
+    let agentsCleaned = false;
+    for (const pcode of Object.keys(QN.state.agents)) {
+      if (!validPcodes.has(pcode)) {
+        delete QN.state.agents[pcode];
+        agentsCleaned = true;
+      }
+    }
+    if (agentsCleaned) QN.saveAgents();
   };
 
   // 방문 빈도 자동 감쇠 (1주일마다 50% 감쇠)
@@ -222,6 +233,66 @@
 
   QN.isProjectPinned = function(pcode) {
     return QN.state.pinnedProjects.includes(String(pcode));
+  };
+
+  // ============================================
+  // 에이전트 캐시
+  // ============================================
+
+  QN.loadAgents = function() {
+    try {
+      const raw = localStorage.getItem('whatap_qn_agents');
+      if (raw) QN.state.agents = JSON.parse(raw);
+    } catch (e) { QN.state.agents = {}; }
+  };
+
+  QN.saveAgents = function() {
+    try {
+      localStorage.setItem('whatap_qn_agents', JSON.stringify(QN.state.agents));
+    } catch (e) {}
+  };
+
+  // postMessage 수신 (interceptor.js → content script)
+  window.addEventListener('message', function(event) {
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.type === 'WHATAP_QN_AGENT_DATA') {
+      QN.state.agents[event.data.pcode] = event.data.agents;
+      QN.saveAgents();
+    }
+  });
+
+  // 쿼리 접두사 파싱: "a:DMX" → { prefix: 'agent', query: 'DMX' }
+  QN.parseQuery = function(input) {
+    const match = input.match(/^([amp]):(.*)$/);
+    if (match) {
+      const prefixMap = { a: 'agent', m: 'menu', p: 'project' };
+      return { prefix: prefixMap[match[1]], query: match[2].trim() };
+    }
+    return { prefix: null, query: input.trim() };
+  };
+
+  // 에이전트 아이템 목록
+  QN.getAgentItems = function() {
+    const items = [];
+    for (const [pcode, agents] of Object.entries(QN.state.agents)) {
+      const project = QN.state.projects[pcode];
+      if (!project) continue;
+      agents.forEach(agent => {
+        items.push({
+          itemType: 'agent',
+          oname: agent.oname,
+          name: agent.oname,
+          ip: agent.ip,
+          oid: agent.oid,
+          isActive: agent.isActive,
+          alias: agent.alias,
+          pcode: Number(pcode),
+          projectName: project.name,
+          productType: project.productType
+        });
+      });
+    }
+    return items;
   };
 
   // 최근 방문 메뉴 항목 조합 (표시용)
@@ -591,7 +662,25 @@
     const scored = items.map(item => {
       let score = 0;
 
-      if (item.itemType === 'project') {
+      if (item.itemType === 'agent') {
+        const oname = (item.oname || '').toLowerCase();
+        const ip = item.ip || '';
+        const alias = (item.alias || '').toLowerCase();
+
+        if (oname === lowerQuery) score += 1000;
+        else if (oname.startsWith(lowerQuery)) score += 500;
+        else if (oname.includes(lowerQuery)) score += 200;
+
+        if (ip.startsWith(lowerQuery)) score += 400;
+        else if (ip.includes(lowerQuery)) score += 150;
+
+        if (alias && alias.includes(lowerQuery)) score += 100;
+
+        if (score === 0) {
+          const fzf = QN.fzfScore(lowerQuery, oname);
+          if (fzf > 0) score += Math.min(fzf, 80);
+        }
+      } else if (item.itemType === 'project') {
         // 숫자 검색 시 프로젝트 우선
         if (isNumericQuery) score += 100;
         // 프로젝트 검색

@@ -67,6 +67,8 @@
       QN.resetAllVisitData();
       // 현재 단계에 따라 목록 갱신
       if (state.currentStep === 'menu') {
+        state.searchInput.value = '';
+        state.currentPrefix = null;
         state.filteredItems = QN.getAllItems();
         renderItemResults();
       } else if (state.currentStep === 'project') {
@@ -90,6 +92,8 @@
 
       // 현재 단계에 따라 목록 갱신
       if (state.currentStep === 'menu') {
+        state.searchInput.value = '';
+        state.currentPrefix = null;
         state.filteredItems = QN.getAllItems();
         renderItemResults();
       } else if (state.currentStep === 'project') {
@@ -112,7 +116,7 @@
   }
 
   // 첫 단계: 메뉴 + 프로젝트 통합 렌더링
-  function renderItemResults() {
+  function renderItemResults(prefix) {
     state.resultsList.innerHTML = '';
 
     if (state.filteredItems.length === 0) {
@@ -121,12 +125,13 @@
     }
 
     const currentMenuPath = QN.getCurrentMenuPath();
-    const query = state.searchInput ? state.searchInput.value.trim() : '';
+    const rawInput = state.searchInput ? state.searchInput.value.trim() : '';
+    const { query } = QN.parseQuery(rawInput);
 
     state.renderedRecentItems = [];
 
-    // 검색어 없을 때 최근 방문 섹션 표시
-    if (!query && state.recentVisits && state.recentVisits.length > 0) {
+    // 검색어 없고 접두사 없을 때 최근 방문 섹션 표시
+    if (!query && !prefix && state.recentVisits && state.recentVisits.length > 0) {
       const header = document.createElement('div');
       header.className = 'whatap-qn-section-header';
       header.textContent = '최근 방문';
@@ -213,6 +218,24 @@
           </div>
         `;
         div.addEventListener('click', (e) => selectProjectFirst(item));
+      } else if (item.itemType === 'agent') {
+        // 에이전트 렌더링
+        const activeIndicator = item.isActive
+          ? '<span class="whatap-qn-agent-active">●</span>'
+          : '<span class="whatap-qn-agent-inactive">●</span>';
+
+        div.innerHTML = `
+          <div class="whatap-qn-item-content">
+            ${activeIndicator}
+            <span class="whatap-qn-item-name">${QN.highlightMatch(item.oname, query)}</span>
+            <span class="whatap-qn-item-category">${QN.escapeHtml(item.projectName)}</span>
+          </div>
+          <div class="whatap-qn-item-meta">
+            <span class="whatap-qn-agent-ip">${QN.highlightMatch(item.ip || '', query)}</span>
+            <span class="whatap-qn-badge">AGENT</span>
+          </div>
+        `;
+        div.addEventListener('click', (e) => navigateToAgent(item, e.metaKey || e.ctrlKey));
       } else {
         // 메뉴 렌더링
         const isCurrentMenu = item.path === currentMenuPath || item.fullPath === currentMenuPath;
@@ -417,9 +440,23 @@
     state.selectedIndex = 0;
 
     if (state.currentStep === 'menu') {
-      const query = state.searchInput.value.trim();
-      state.filteredItems = QN.fuzzySearch(query, QN.getAllItems());
-      renderItemResults();
+      const rawInput = state.searchInput.value.trim();
+      const { prefix, query } = QN.parseQuery(rawInput);
+
+      let items;
+      if (prefix === 'agent') {
+        items = QN.getAgentItems();
+      } else if (prefix === 'project') {
+        items = QN.getAllItems().filter(i => i.itemType === 'project');
+      } else if (prefix === 'menu') {
+        items = QN.getAllItems().filter(i => i.itemType === 'menu');
+      } else {
+        items = QN.getAllItems();
+      }
+
+      state.filteredItems = query ? QN.fuzzySearch(query, items) : items;
+      state.currentPrefix = prefix;
+      renderItemResults(prefix);
     } else if (state.currentStep === 'project') {
       const projectList = QN.getProjectListForMenu(state.selectedMenu);
       renderProjectResults(projectList);
@@ -446,12 +483,19 @@
         if (item) {
           if (item.itemType === 'project') {
             QN.togglePinProject(item.pcode);
-          } else {
+          } else if (item.itemType === 'menu') {
             QN.togglePinMenu(item.path);
           }
           // 목록 재정렬 후 리렌더링
-          state.filteredItems = QN.fuzzySearch(state.searchInput.value.trim(), QN.getAllItems());
-          renderItemResults();
+          const rawInput = state.searchInput.value.trim();
+          const parsed = QN.parseQuery(rawInput);
+          let pinItems;
+          if (parsed.prefix === 'agent') pinItems = QN.getAgentItems();
+          else if (parsed.prefix === 'project') pinItems = QN.getAllItems().filter(i => i.itemType === 'project');
+          else if (parsed.prefix === 'menu') pinItems = QN.getAllItems().filter(i => i.itemType === 'menu');
+          else pinItems = QN.getAllItems();
+          state.filteredItems = parsed.query ? QN.fuzzySearch(parsed.query, pinItems) : pinItems;
+          renderItemResults(parsed.prefix);
         }
       } else if (state.currentStep === 'project') {
         const projectList = QN.getProjectListForMenu(state.selectedMenu);
@@ -473,7 +517,7 @@
         state.isKeyboardNavigation = true;
         state.selectedIndex = Math.min(state.selectedIndex + 1, maxIndex);
         if (state.currentStep === 'menu') {
-          renderItemResults();
+          renderItemResults(state.currentPrefix);
         } else if (state.currentStep === 'project') {
           renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
         } else if (state.currentStep === 'menu_for_project') {
@@ -486,7 +530,7 @@
         state.isKeyboardNavigation = true;
         state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
         if (state.currentStep === 'menu') {
-          renderItemResults();
+          renderItemResults(state.currentPrefix);
         } else if (state.currentStep === 'project') {
           renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
         } else if (state.currentStep === 'menu_for_project') {
@@ -515,7 +559,9 @@
           } else {
             const item = state.filteredItems[state.selectedIndex - recentCount];
             if (item) {
-              if (item.itemType === 'project') {
+              if (item.itemType === 'agent') {
+                navigateToAgent(item, openInNewTab);
+              } else if (item.itemType === 'project') {
                 selectProjectFirst(item);
               } else {
                 selectMenu(item, openInNewTab);
@@ -639,13 +685,30 @@
     }
   }
 
+  function navigateToAgent(agent, openInNewTab = false) {
+    const urlProductType = QN.getUrlProductType(agent.productType);
+    if (!urlProductType) return;
+    const fullPath = `/v2/project/${urlProductType}/${agent.pcode}/dashboard`;
+    QN.saveVisitCount('/dashboard');
+    QN.saveProjectVisitCount(agent.pcode);
+    QN.saveRecentVisit('/dashboard', 'menu', agent.pcode);
+
+    if (openInNewTab) {
+      window.open(fullPath, '_blank');
+    } else {
+      window.location.href = fullPath;
+      hideModal();
+    }
+  }
+
   function goBackToMenuStep() {
     state.currentStep = 'menu';
     state.selectedMenu = null;
     state.selectedProject = null;
     state.selectedIndex = 0;
+    state.currentPrefix = null;
     state.searchInput.value = '';
-    state.searchInput.placeholder = '메뉴 또는 프로젝트 검색...';
+    state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
     updateBreadcrumb();
     state.filteredItems = QN.getAllItems();
     renderItemResults();
@@ -674,8 +737,9 @@
     state.currentStep = 'menu';
     state.selectedMenu = null;
     state.selectedProject = null;
+    state.currentPrefix = null;
     state.searchInput.value = '';
-    state.searchInput.placeholder = '메뉴 또는 프로젝트 검색...';
+    state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
     updateBreadcrumb();
     state.filteredItems = QN.getAllItems();
     state.selectedIndex = 0;
@@ -700,6 +764,12 @@
   if (EXCLUDED_SUBDOMAINS.includes(subdomain)) {
     return; // 조용히 종료
   }
+
+  // interceptor.js를 페이지 컨텍스트에 주입 (fetch 감싸기)
+  const interceptorScript = document.createElement('script');
+  interceptorScript.src = chrome.runtime.getURL('interceptor.js');
+  interceptorScript.addEventListener('load', () => interceptorScript.remove());
+  (document.head || document.documentElement).appendChild(interceptorScript);
 
   // 전역 키보드 이벤트
   document.addEventListener('keydown', (e) => {
@@ -738,6 +808,7 @@
   QN.loadProjectVisitCounts();
   QN.loadRecentVisits();
   QN.loadPinned();
+  QN.loadAgents();
   QN.applyVisitDecay();
   QN.loadProjects().then(() => {
     QN.cleanupDeletedProjects();

@@ -402,6 +402,31 @@
   opacity: 1;
 }
 
+/* 에이전트 IP */
+.whatap-qn-agent-ip {
+  font-size: 11px;
+  color: #82AAFF;
+  font-family: 'SF Mono', Monaco, monospace;
+  margin-right: 6px;
+}
+
+/* 에이전트 활성 상태 인디케이터 */
+.whatap-qn-agent-active {
+  color: #10b981;
+  font-size: 10px;
+  margin-right: 6px;
+}
+.whatap-qn-agent-inactive {
+  color: #6b7280;
+  font-size: 10px;
+  margin-right: 6px;
+}
+
+/* 라이트 모드 에이전트 IP */
+.whatap-qn-light .whatap-qn-agent-ip {
+  color: #3b82f6;
+}
+
 /* 최근 방문 배지 */
 .whatap-qn-recent-badge {
   display: inline-flex;
