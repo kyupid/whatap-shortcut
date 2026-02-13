@@ -383,7 +383,14 @@
       const response = await fetch('/account/api/v4/groups/min', {
         credentials: 'include'
       });
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      if (!text || !text.startsWith('{')) {
+        throw new Error('Non-JSON response');
+      }
+      const data = JSON.parse(text);
       if (data.ok && data.data && data.data.projects) {
         QN.state.projects = data.data.projects;
 
