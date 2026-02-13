@@ -32,6 +32,7 @@
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
           </svg>
+          <span class="whatap-qn-prefix-badge" style="display:none"></span>
           <input type="text" class="whatap-qn-input" placeholder="메뉴 검색... (↑↓ 이동, Enter 선택)" autofocus />
           <kbd class="whatap-qn-kbd">ESC</kbd>
         </div>
@@ -436,12 +437,33 @@
   // 이벤트 핸들러
   // ============================================
 
+  const PREFIX_LABELS = {
+    agent: { label: 'AGENT', cls: 'agent' },
+    menu: { label: 'MENU', cls: 'menu' },
+    project: { label: 'PROJECT', cls: 'project' },
+  };
+
+  function updatePrefixBadge(prefix) {
+    const badge = state.modal.querySelector('.whatap-qn-prefix-badge');
+    if (!badge) return;
+    if (prefix && PREFIX_LABELS[prefix]) {
+      const info = PREFIX_LABELS[prefix];
+      badge.textContent = info.label;
+      badge.className = 'whatap-qn-prefix-badge whatap-qn-prefix-' + info.cls;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
   function handleSearch() {
     state.selectedIndex = 0;
 
     if (state.currentStep === 'menu') {
       const rawInput = state.searchInput.value.trim();
       const { prefix, query } = QN.parseQuery(rawInput);
+
+      updatePrefixBadge(prefix);
 
       let items;
       if (prefix === 'agent') {
@@ -709,6 +731,7 @@
     state.currentPrefix = null;
     state.searchInput.value = '';
     state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
+    updatePrefixBadge(null);
     updateBreadcrumb();
     state.filteredItems = QN.getAllItems();
     renderItemResults();
@@ -740,6 +763,7 @@
     state.currentPrefix = null;
     state.searchInput.value = '';
     state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
+    updatePrefixBadge(null);
     updateBreadcrumb();
     state.filteredItems = QN.getAllItems();
     state.selectedIndex = 0;
@@ -763,6 +787,12 @@
 
   if (EXCLUDED_SUBDOMAINS.includes(subdomain)) {
     return; // 조용히 종료
+  }
+
+  // OAuth 콜백 등 인증 관련 페이지에서는 실행 안 함
+  const pathname = window.location.pathname;
+  if (pathname.startsWith('/oauth2/') || pathname.startsWith('/sso/') || pathname.startsWith('/login')) {
+    return;
   }
 
   // interceptor.js를 페이지 컨텍스트에 주입 (fetch 감싸기)

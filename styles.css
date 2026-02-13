@@ -133,6 +133,43 @@
   opacity: 0.6;
 }
 
+/* Prefix badge inside search input */
+.whatap-qn-prefix-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  margin-left: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  animation: whatap-qn-badge-in 0.12s ease-out;
+}
+
+@keyframes whatap-qn-badge-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.whatap-qn-prefix-agent {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.whatap-qn-prefix-menu {
+  color: var(--whatap-primary-300);
+  background: var(--qn-badge-bg);
+  border: 1px solid rgba(87, 132, 248, 0.25);
+}
+
+.whatap-qn-prefix-project {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
 .whatap-qn-kbd {
   display: inline-flex;
   align-items: center;
