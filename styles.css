@@ -88,21 +88,6 @@
   overflow: hidden;
 }
 
-.whatap-qn-header {
-  padding: 12px 20px 0;
-  min-height: 20px;
-}
-
-.whatap-qn-breadcrumb {
-  font-size: 13px;
-  color: var(--qn-text-secondary);
-}
-
-.whatap-qn-crumb {
-  color: var(--whatap-primary-300);
-  font-weight: 500;
-}
-
 .whatap-qn-search-wrapper {
   display: flex;
   align-items: center;
@@ -238,7 +223,6 @@
   align-items: center;
   flex: 1;
   min-width: 0;
-  flex-wrap: wrap;
 }
 
 .whatap-qn-item-icon {
@@ -254,11 +238,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin-right: 8px;
+  flex-shrink: 0;
+  max-width: 50%;
 }
 
 .whatap-qn-item-category {
   font-size: 12px;
   color: var(--qn-text-secondary);
+}
+
+/* Combo result: project name shown after menu name */
+.whatap-qn-combo-project {
+  font-size: 12px;
+  color: var(--qn-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .whatap-qn-item-meta {

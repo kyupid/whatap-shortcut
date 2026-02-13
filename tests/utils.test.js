@@ -313,21 +313,6 @@ describe('WhaTapQN Utils', () => {
     });
   });
 
-  describe('getAllItems', () => {
-    it('should include both menus and projects', () => {
-      setMockProjects({
-        '1': { pcode: 1, name: 'Test Project', productType: 'APM' },
-      });
-
-      const items = QN.getAllItems();
-      const menuItems = items.filter(i => i.itemType === 'menu');
-      const projectItems = items.filter(i => i.itemType === 'project');
-
-      expect(menuItems.length).toBeGreaterThan(0);
-      expect(projectItems).toHaveLength(1);
-    });
-  });
-
   describe('getMenusForProductType', () => {
     it('should return APM menus for APM product type', () => {
       const menus = QN.getMenusForProductType('APM');

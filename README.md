@@ -8,10 +8,17 @@ WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메
 
 ## 주요 기능
 
-- **빠른 검색**: 퍼지 검색으로 메뉴 이름 일부만 입력해도 찾기
+- **빠른 검색**: fzf 스타일 퍼지 검색으로 메뉴 이름 일부만 입력해도 찾기
 - **양방향 탐색**: 메뉴 먼저 또는 프로젝트 먼저, 원하는 순서로 이동
 - **빈도 기반 정렬**: 자주 가는 메뉴/프로젝트가 자동으로 상단에
 - **한글 지원**: "홈", "메인", "대시보드" 등 한글 별칭 검색 가능
+- **검색 하이라이팅**: 매칭된 텍스트를 시각적으로 강조 표시
+- **최근 방문**: 검색어 없을 때 최근 방문한 메뉴를 상단에 표시
+- **즐겨찾기(핀)**: `Cmd+D`로 메뉴/프로젝트를 고정하여 항상 최상단에
+- **프로젝트 그룹**: API 그룹 정보를 활용하여 프로젝트를 그룹별로 표시
+- **컨텍스트 기반 정렬**: 현재 프로젝트 타입에 맞는 메뉴를 우선 표시
+- **다크/라이트 테마**: WhaTap 테마에 맞춰 자동 전환
+- **새 탭 열기**: `Cmd+Enter`로 선택한 항목을 새 탭에서 열기
 
 ## 설치 방법
 
@@ -25,7 +32,7 @@ WhaTap 모니터링 서비스에서 `Cmd+K` (Windows: `Ctrl+K`)로 빠르게 메
 git clone https://github.com/kyupid/whatap-shortcut.git
 ```
 
-이후 위와 동일하게 `chrome://extensions`에서 폴더 로드
+`chrome://extensions` → 개발자 모드 → "압축해제된 확장 프로그램을 로드합니다" → 폴더 선택
 
 ## 사용법
 
@@ -34,6 +41,8 @@ git clone https://github.com/kyupid/whatap-shortcut.git
 | `Cmd+K` / `Ctrl+K` | 모달 열기/닫기 |
 | `↑` `↓` | 항목 이동 |
 | `Enter` | 선택 |
+| `Cmd+Enter` / `Ctrl+Enter` | 새 탭에서 열기 |
+| `Cmd+D` / `Ctrl+D` | 핀 고정/해제 |
 | `Backspace` | 이전 단계로 |
 | `ESC` | 검색어 지우기 → 모달 닫기 |
 
@@ -67,8 +76,20 @@ Global 메뉴 (프로젝트 목록, 계정 관리 등)는 프로젝트 선택 �
 ## 기술 스택
 
 - Chrome Extension Manifest V3
-- Vanilla JavaScript
-- CSS Variables (WhaTap 브랜드 컬러)
+- Vanilla JavaScript (ES6+)
+- CSS Variables (WhaTap 테마 자동 감지)
+
+## 파일 구조
+
+```
+whatap-shortcut/
+├── manifest.json   # Chrome Extension Manifest V3 설정
+├── content.js      # 메인 UI 및 이벤트 처리
+├── menus.js        # 메뉴 데이터 정의
+├── utils.js        # 검색, 스코어링, 유틸리티
+├── styles.css      # 모달 스타일링
+└── build.js        # 빌드 스크립트
+```
 
 ## 데이터 저장
 

@@ -8,6 +8,11 @@
   // 상태 참조 (단축 변수)
   const state = QN.state;
 
+  // Combo search 로컬 상태
+  let comboItems = [];   // 현재 표시 중인 combo/menu 항목
+  let isAgentMode = false;
+  let agentItems = [];
+
   // ============================================
   // 모달 UI
   // ============================================
@@ -24,16 +29,13 @@
     state.modal.innerHTML = `
       <div class="whatap-qn-backdrop"></div>
       <div class="whatap-qn-container">
-        <div class="whatap-qn-header">
-          <span class="whatap-qn-breadcrumb"></span>
-        </div>
         <div class="whatap-qn-search-wrapper">
           <svg class="whatap-qn-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
           </svg>
           <span class="whatap-qn-prefix-badge" style="display:none"></span>
-          <input type="text" class="whatap-qn-input" placeholder="메뉴 검색... (↑↓ 이동, Enter 선택)" autofocus />
+          <input type="text" class="whatap-qn-input" placeholder="Search menus, projects..." autofocus />
           <kbd class="whatap-qn-kbd">ESC</kbd>
         </div>
         <div class="whatap-qn-results"></div>
@@ -42,7 +44,6 @@
           <span><kbd>Enter</kbd> 선택</span>
           <span><kbd>⌘</kbd><kbd>Enter</kbd> 새탭</span>
           <span><kbd>⌘</kbd><kbd>D</kbd> 핀</span>
-          <span><kbd>Backspace</kbd> 뒤로</span>
           <span><kbd>ESC</kbd> 닫기</span>
           <button class="whatap-qn-reset-btn" title="방문 기록 초기화">✕</button>
           <button class="whatap-qn-refresh-btn" title="프로젝트 새로고침">↻</button>
@@ -66,361 +67,251 @@
     resetBtn.addEventListener('click', () => {
       if (!confirm('방문 기록을 모두 초기화하시겠습니까?\n(핀 설정은 유지됩니다)')) return;
       QN.resetAllVisitData();
-      // 현재 단계에 따라 목록 갱신
-      if (state.currentStep === 'menu') {
-        state.searchInput.value = '';
-        state.currentPrefix = null;
-        state.filteredItems = QN.getAllItems();
-        renderItemResults();
-      } else if (state.currentStep === 'project') {
-        renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
-      } else if (state.currentStep === 'menu_for_project') {
-        renderMenusForProject();
-      }
+      state.searchInput.value = '';
+      state.selectedIndex = 0;
+      renderInitialScreen();
     });
 
     // 새로고침 버튼 클릭 핸들러
     refreshBtn.addEventListener('click', async () => {
       const now = Date.now();
-      if (now - lastRefreshTime < REFRESH_COOLDOWN) {
-        return; // 쿨다운 중
-      }
+      if (now - lastRefreshTime < REFRESH_COOLDOWN) return;
       lastRefreshTime = now;
 
       refreshBtn.classList.add('loading');
       await QN.loadProjects(true); // forceRefresh
       refreshBtn.classList.remove('loading');
 
-      // 현재 단계에 따라 목록 갱신
-      if (state.currentStep === 'menu') {
-        state.searchInput.value = '';
-        state.currentPrefix = null;
-        state.filteredItems = QN.getAllItems();
-        renderItemResults();
-      } else if (state.currentStep === 'project') {
-        renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
-      } else if (state.currentStep === 'menu_for_project') {
-        renderMenusForProject();
-      }
+      // 현재 뷰 갱신
+      handleSearch();
     });
   }
 
-  function updateBreadcrumb() {
-    const breadcrumb = state.modal.querySelector('.whatap-qn-breadcrumb');
-    if (state.currentStep === 'menu') {
-      breadcrumb.textContent = '';
-    } else if (state.currentStep === 'project' && state.selectedMenu) {
-      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${QN.escapeHtml(state.selectedMenu.name)}</span> → 프로젝트 선택`;
-    } else if (state.currentStep === 'menu_for_project' && state.selectedProject) {
-      breadcrumb.innerHTML = `<span class="whatap-qn-crumb">${QN.escapeHtml(state.selectedProject.name)}</span> → 메뉴 선택`;
+  // ============================================
+  // 렌더링
+  // ============================================
+
+  // 멀티워드 하이라이트: 각 단어별로 매칭 시도
+  function highlightCombo(text, query) {
+    if (!query || !text) return QN.escapeHtml(text || '');
+    // 전체 쿼리로 먼저 시도
+    const full = QN.highlightMatch(text, query);
+    if (full.includes('whatap-qn-highlight')) return full;
+    // 개별 단어로 시도
+    const words = query.trim().split(/\s+/).filter(w => w.length > 0);
+    for (const word of words) {
+      const result = QN.highlightMatch(text, word);
+      if (result.includes('whatap-qn-highlight')) return result;
     }
+    return QN.escapeHtml(text);
   }
 
-  // 첫 단계: 메뉴 + 프로젝트 통합 렌더링
-  function renderItemResults(prefix) {
+  // 초기 화면 (검색어 없을 때): PINNED → RECENT → ALL MENUS
+  function renderInitialScreen() {
     state.resultsList.innerHTML = '';
+    comboItems = [];
+    isAgentMode = false;
 
-    if (state.filteredItems.length === 0) {
+    const pinned = QN.getPinnedCombos();
+    const recent = QN.getRecentCombos();
+    const allMenus = QN.getAllMenus();
+
+    // RECENT에서 PINNED와 중복 제거
+    const pinnedKeys = new Set(pinned.map(c =>
+      c.menu.path + ':' + (c.project ? c.project.pcode : '_')
+    ));
+    const filteredRecent = recent.filter(c => {
+      const key = c.menu.path + ':' + (c.project ? c.project.pcode : '_');
+      return !pinnedKeys.has(key);
+    });
+
+    // PINNED 섹션
+    if (pinned.length > 0) {
+      appendSectionHeader('PINNED');
+      pinned.forEach(combo => {
+        comboItems.push(combo);
+        appendComboItem(combo, comboItems.length - 1, '');
+      });
+    }
+
+    // RECENT 섹션
+    if (filteredRecent.length > 0) {
+      appendSectionHeader('RECENT');
+      filteredRecent.forEach(combo => {
+        comboItems.push(combo);
+        appendComboItem(combo, comboItems.length - 1, '');
+      });
+    }
+
+    // ALL MENUS 섹션 (global 메뉴만 표시 - 비global은 검색으로 찾기)
+    const remaining = 50 - comboItems.length;
+    if (remaining > 0) {
+      const shownKeys = new Set(comboItems.map(c =>
+        c.menu.path + ':' + (c.project ? c.project.pcode : '_')
+      ));
+
+      appendSectionHeader('ALL MENUS');
+      let count = 0;
+      for (const menu of allMenus) {
+        if (count >= remaining) break;
+        if (menu.productType !== 'global') continue;
+
+        const key = menu.path + ':_';
+        if (shownKeys.has(key)) continue;
+
+        const combo = {
+          menu,
+          project: null,
+          score: 0,
+          fullPath: menu.fullPath || menu.path
+        };
+        comboItems.push(combo);
+        appendComboItem(combo, comboItems.length - 1, '');
+        count++;
+      }
+    }
+
+    if (comboItems.length === 0) {
+      state.resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
+    }
+
+    scrollToSelected();
+  }
+
+  // 콤보 검색 결과 렌더링
+  function renderComboResults(combos, query) {
+    state.resultsList.innerHTML = '';
+    comboItems = combos;
+    isAgentMode = false;
+
+    if (combos.length === 0) {
       state.resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
       return;
     }
 
-    const currentMenuPath = QN.getCurrentMenuPath();
-    const rawInput = state.searchInput ? state.searchInput.value.trim() : '';
-    const { query } = QN.parseQuery(rawInput);
-
-    state.renderedRecentItems = [];
-
-    // 검색어 없고 접두사 없을 때 최근 방문 섹션 표시
-    if (!query && !prefix && state.recentVisits && state.recentVisits.length > 0) {
-      const header = document.createElement('div');
-      header.className = 'whatap-qn-section-header';
-      header.textContent = '최근 방문';
-      state.resultsList.appendChild(header);
-
-      const recentMenus = QN.getRecentMenuItems();
-      state.renderedRecentItems = recentMenus;
-      recentMenus.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
-
-        const productBadge = item.productType && item.productType !== 'global'
-          ? `<span class="whatap-qn-badge">${QN.escapeHtml(item.displayProductType || item.productType.toUpperCase())}</span>`
-          : '';
-
-        const projectInfo = item.projectName
-          ? `<span class="whatap-qn-item-category">${QN.escapeHtml(item.projectName)}</span>`
-          : '';
-
-        const pinIcon = QN.isMenuPinned(item.path) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
-
-        div.innerHTML = `
-          <div class="whatap-qn-item-content">
-            <span class="whatap-qn-item-name">${QN.escapeHtml(item.name)}</span>
-            ${projectInfo}
-          </div>
-          <div class="whatap-qn-item-meta">
-            ${pinIcon}
-            <span class="whatap-qn-recent-badge">최근</span>
-            ${productBadge}
-          </div>
-        `;
-        div.addEventListener('click', () => {
-          if (item.fullPath) {
-            window.location.href = item.fullPath;
-            hideModal();
-          } else if (item.itemType === 'menu') {
-            selectMenu(item);
-          }
-        });
-        div.addEventListener('mouseenter', () => {
-          if (state.isKeyboardNavigation) return;
-          if (state.selectedIndex === index) return;
-          const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
-          if (prev) prev.classList.remove('selected');
-          state.selectedIndex = index;
-          div.classList.add('selected');
-        });
-        div.addEventListener('mousemove', () => { state.isKeyboardNavigation = false; });
-        state.resultsList.appendChild(div);
-      });
-
-      // 전체 메뉴 섹션 헤더
-      const allHeader = document.createElement('div');
-      allHeader.className = 'whatap-qn-section-header';
-      allHeader.textContent = '전체 메뉴';
-      state.resultsList.appendChild(allHeader);
-    }
-
-    const recentOffset = state.renderedRecentItems.length;
-    state.filteredItems.slice(0, 50).forEach((item, idx) => {
-      const index = recentOffset + idx;
-      const div = document.createElement('div');
-      div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
-
-      if (item.itemType === 'project') {
-        // 프로젝트 렌더링
-        const visitCount = state.projectVisitCounts[item.pcode] || 0;
-        const visitBadge = visitCount > 0
-          ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
-          : '';
-        const pinIcon = QN.isProjectPinned(item.pcode) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
-
-        div.innerHTML = `
-          <div class="whatap-qn-item-content">
-            <span class="whatap-qn-item-icon">📁</span>
-            <span class="whatap-qn-item-name">${QN.highlightMatch(item.name, query)}</span>
-            <span class="whatap-qn-item-category">${QN.highlightMatch(item.platform || item.productType, query)}</span>
-          </div>
-          <div class="whatap-qn-item-meta">
-            ${pinIcon}
-            ${visitBadge}
-            <span class="whatap-qn-pcode">#${item.pcode}</span>
-          </div>
-        `;
-        div.addEventListener('click', (e) => selectProjectFirst(item));
-      } else if (item.itemType === 'agent') {
-        // 에이전트 렌더링
-        const activeIndicator = item.isActive
-          ? '<span class="whatap-qn-agent-active">●</span>'
-          : '<span class="whatap-qn-agent-inactive">●</span>';
-
-        div.innerHTML = `
-          <div class="whatap-qn-item-content">
-            ${activeIndicator}
-            <span class="whatap-qn-item-name">${QN.highlightMatch(item.oname, query)}</span>
-            <span class="whatap-qn-item-category">${QN.escapeHtml(item.projectName)}</span>
-          </div>
-          <div class="whatap-qn-item-meta">
-            <span class="whatap-qn-agent-ip">${QN.highlightMatch(item.ip || '', query)}</span>
-            <span class="whatap-qn-badge">AGENT</span>
-          </div>
-        `;
-        div.addEventListener('click', (e) => navigateToAgent(item, e.metaKey || e.ctrlKey));
-      } else {
-        // 메뉴 렌더링
-        const isCurrentMenu = item.path === currentMenuPath || item.fullPath === currentMenuPath;
-        const currentPageBadge = isCurrentMenu
-          ? '<span class="whatap-qn-current-badge">현재 페이지</span>'
-          : '';
-
-        const productBadge = item.productType !== 'global'
-          ? `<span class="whatap-qn-badge">${QN.escapeHtml(item.displayProductType || item.productType.toUpperCase())}</span>`
-          : '';
-
-        const visitBadge = state.visitCounts[item.path]
-          ? `<span class="whatap-qn-visit-count">${state.visitCounts[item.path]}</span>`
-          : '';
-        const pinIcon = QN.isMenuPinned(item.path) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
-
-        div.innerHTML = `
-          <div class="whatap-qn-item-content">
-            <span class="whatap-qn-item-name">${QN.highlightMatch(item.name, query)}</span>
-            <span class="whatap-qn-item-category">${QN.highlightMatch(item.category || '', query)}</span>
-          </div>
-          <div class="whatap-qn-item-meta">
-            ${pinIcon}
-            ${currentPageBadge}
-            ${visitBadge}
-            ${productBadge}
-          </div>
-        `;
-        div.addEventListener('click', (e) => selectMenu(item, e.metaKey || e.ctrlKey));
-      }
-
-      div.addEventListener('mouseenter', () => {
-        if (state.isKeyboardNavigation) return;
-        if (state.selectedIndex === index) return;
-        // 기존 선택 해제
-        const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
-        if (prev) prev.classList.remove('selected');
-        // 새 항목 선택
-        state.selectedIndex = index;
-        div.classList.add('selected');
-      });
-      div.addEventListener('mousemove', () => {
-        state.isKeyboardNavigation = false;
-      });
-      state.resultsList.appendChild(div);
+    combos.forEach((combo, index) => {
+      appendComboItem(combo, index, query);
     });
 
     scrollToSelected();
   }
 
-  // 프로젝트 먼저 선택 후 메뉴 렌더링
-  function renderMenusForProject() {
+  // 섹션 헤더 추가
+  function appendSectionHeader(text) {
+    const header = document.createElement('div');
+    header.className = 'whatap-qn-section-header';
+    header.textContent = text;
+    state.resultsList.appendChild(header);
+  }
+
+  // 콤보 아이템 하나를 DOM에 추가
+  function appendComboItem(combo, index, query) {
+    const div = document.createElement('div');
+    div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
+
+    // 메뉴 이름 (하이라이트)
+    const menuName = query
+      ? highlightCombo(combo.menu.name, query)
+      : QN.escapeHtml(combo.menu.name);
+
+    // 프로젝트 이름
+    const projectName = combo.project
+      ? `<span class="whatap-qn-combo-project">${query ? highlightCombo(combo.project.name, query) : QN.escapeHtml(combo.project.name)}</span>`
+      : '';
+
+    // 뱃지: productType 또는 GLOBAL
+    let badgeText;
+    if (combo.project) {
+      badgeText = QN.getUrlProductType(combo.project.productType) || combo.project.productType;
+    } else if (combo.menu.productType === 'global') {
+      badgeText = 'GLOBAL';
+    } else {
+      badgeText = combo.menu.displayProductType || combo.menu.productType;
+    }
+    const badge = `<span class="whatap-qn-badge">${QN.escapeHtml((badgeText || '').toUpperCase())}</span>`;
+
+    // 핀 아이콘
+    const pinned = QN.isComboPinned(combo.menu.path, combo.project ? combo.project.pcode : null);
+    const pinIcon = pinned
+      ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>'
+      : '';
+
+    // 방문 횟수
+    const menuVisits = state.visitCounts[combo.menu.path] || 0;
+    const projVisits = combo.project ? (state.projectVisitCounts[combo.project.pcode] || 0) : 0;
+    const totalVisits = menuVisits + projVisits;
+    const visitBadge = totalVisits > 0
+      ? `<span class="whatap-qn-visit-count">${totalVisits}</span>`
+      : '';
+
+    div.innerHTML = `
+      <div class="whatap-qn-item-content">
+        <span class="whatap-qn-item-name">${menuName}</span>
+        ${projectName}
+      </div>
+      <div class="whatap-qn-item-meta">
+        ${pinIcon}
+        ${visitBadge}
+        ${badge}
+      </div>
+    `;
+
+    div.addEventListener('click', (e) => navigateToCombo(combo, e.metaKey || e.ctrlKey));
+    div.addEventListener('mouseenter', () => {
+      if (state.isKeyboardNavigation) return;
+      if (state.selectedIndex === index) return;
+      const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
+      if (prev) prev.classList.remove('selected');
+      state.selectedIndex = index;
+      div.classList.add('selected');
+    });
+    div.addEventListener('mousemove', () => { state.isKeyboardNavigation = false; });
+    state.resultsList.appendChild(div);
+  }
+
+  // 에이전트 검색 결과 렌더링
+  function renderAgentResults(agents, query) {
     state.resultsList.innerHTML = '';
+    agentItems = agents;
+    isAgentMode = true;
+    comboItems = [];
 
-    const menus = QN.getMenusForProductType(state.selectedProject.productType);
-    const query = state.searchInput.value.trim();
-    const filtered = query ? QN.fuzzySearch(query, menus) : menus;
-
-    if (filtered.length === 0) {
+    if (agents.length === 0) {
       state.resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
       return;
     }
 
-    const currentMenuPath = QN.getCurrentMenuPath();
-
-    filtered.slice(0, 50).forEach((menu, index) => {
+    agents.slice(0, 50).forEach((agent, index) => {
       const div = document.createElement('div');
       div.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
 
-      const isCurrentMenu = menu.path === currentMenuPath;
-      const currentPageBadge = isCurrentMenu
-        ? '<span class="whatap-qn-current-badge">현재 페이지</span>'
-        : '';
-
-      const productBadge = menu.productType !== 'global'
-        ? `<span class="whatap-qn-badge">${QN.escapeHtml(menu.displayProductType || menu.productType.toUpperCase())}</span>`
-        : '';
-
-      const visitBadge = state.visitCounts[menu.path]
-        ? `<span class="whatap-qn-visit-count">${state.visitCounts[menu.path]}</span>`
-        : '';
+      const activeIndicator = agent.isActive
+        ? '<span class="whatap-qn-agent-active">●</span>'
+        : '<span class="whatap-qn-agent-inactive">●</span>';
 
       div.innerHTML = `
         <div class="whatap-qn-item-content">
-          <span class="whatap-qn-item-name">${QN.highlightMatch(menu.name, query)}</span>
-          <span class="whatap-qn-item-category">${QN.highlightMatch(menu.category || '', query)}</span>
+          ${activeIndicator}
+          <span class="whatap-qn-item-name">${QN.highlightMatch(agent.oname, query)}</span>
+          <span class="whatap-qn-item-category">${QN.escapeHtml(agent.projectName)}</span>
         </div>
         <div class="whatap-qn-item-meta">
-          ${currentPageBadge}
-          ${visitBadge}
-          ${productBadge}
+          <span class="whatap-qn-agent-ip">${QN.highlightMatch(agent.ip || '', query)}</span>
+          <span class="whatap-qn-badge">AGENT</span>
         </div>
       `;
-      div.addEventListener('click', (e) => navigateFromProject(menu, e.metaKey || e.ctrlKey));
+
+      div.addEventListener('click', (e) => navigateToAgent(agent, e.metaKey || e.ctrlKey));
       div.addEventListener('mouseenter', () => {
         if (state.isKeyboardNavigation) return;
         if (state.selectedIndex === index) return;
-        // 기존 선택 해제
         const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
         if (prev) prev.classList.remove('selected');
-        // 새 항목 선택
         state.selectedIndex = index;
         div.classList.add('selected');
       });
-      div.addEventListener('mousemove', () => {
-        state.isKeyboardNavigation = false;
-      });
+      div.addEventListener('mousemove', () => { state.isKeyboardNavigation = false; });
       state.resultsList.appendChild(div);
-    });
-
-    scrollToSelected();
-  }
-
-  function renderProjectResults(projectList) {
-    state.resultsList.innerHTML = '';
-
-    if (projectList.length === 0) {
-      state.resultsList.innerHTML = '<div class="whatap-qn-empty">접근 가능한 프로젝트가 없습니다</div>';
-      return;
-    }
-
-    const query = state.searchInput.value.trim();
-    const finalList = QN.filterAndSortProjects(projectList, query);
-
-    if (finalList.length === 0) {
-      state.resultsList.innerHTML = '<div class="whatap-qn-empty">검색 결과가 없습니다</div>';
-      return;
-    }
-
-    const currentPcode = QN.getCurrentProjectPcode();
-    let lastGroupName = null;
-
-    finalList.slice(0, 50).forEach((project, index) => {
-      // 검색어 없을 때 그룹 헤더 표시
-      if (!query && project.groupName !== lastGroupName) {
-        lastGroupName = project.groupName;
-        const header = document.createElement('div');
-        header.className = 'whatap-qn-section-header';
-        header.textContent = project.groupName || '미분류';
-        state.resultsList.appendChild(header);
-      }
-
-      const item = document.createElement('div');
-      item.className = 'whatap-qn-item' + (index === state.selectedIndex ? ' selected' : '');
-
-      const isCurrentProject = currentPcode && String(project.pcode) === currentPcode;
-      const visitCount = state.projectVisitCounts[project.pcode] || 0;
-      const visitBadge = visitCount > 0
-        ? `<span class="whatap-qn-visit-count">${visitCount}</span>`
-        : '';
-      const currentBadge = isCurrentProject
-        ? '<span class="whatap-qn-current-badge">현재 프로젝트</span>'
-        : '';
-      const pinIcon = QN.isProjectPinned(project.pcode) ? '<span class="whatap-qn-pin-icon pinned" title="핀 해제">&#9733;</span>' : '';
-      const groupBadge = query && project.groupName
-        ? `<span class="whatap-qn-item-category">${QN.escapeHtml(project.groupName)}</span>`
-        : '';
-
-      item.innerHTML = `
-        <div class="whatap-qn-item-content">
-          <span class="whatap-qn-item-name">${QN.highlightMatch(project.name, query)}</span>
-          <span class="whatap-qn-item-category">${QN.highlightMatch(project.platform || project.productType, query)}</span>
-          ${groupBadge}
-        </div>
-        <div class="whatap-qn-item-meta">
-          ${pinIcon}
-          ${currentBadge}
-          ${visitBadge}
-          <span class="whatap-qn-pcode">#${project.pcode}</span>
-        </div>
-      `;
-      item.addEventListener('click', (e) => navigateToProject(project, e.metaKey || e.ctrlKey));
-      item.addEventListener('mouseenter', () => {
-        if (state.isKeyboardNavigation) return;
-        if (state.selectedIndex === index) return;
-        const prev = state.resultsList.querySelector('.whatap-qn-item.selected');
-        if (prev) prev.classList.remove('selected');
-        state.selectedIndex = index;
-        item.classList.add('selected');
-      });
-      item.addEventListener('mousemove', () => {
-        state.isKeyboardNavigation = false;
-      });
-      state.resultsList.appendChild(item);
     });
 
     scrollToSelected();
@@ -433,23 +324,25 @@
     }
   }
 
+  // 선택 상태만 업데이트 (전체 리렌더링 없이)
+  function updateSelection() {
+    const allItems = state.resultsList.querySelectorAll('.whatap-qn-item');
+    allItems.forEach((el, idx) => {
+      el.classList.toggle('selected', idx === state.selectedIndex);
+    });
+    scrollToSelected();
+  }
+
   // ============================================
   // 이벤트 핸들러
   // ============================================
 
-  const PREFIX_LABELS = {
-    agent: { label: 'AGENT', cls: 'agent' },
-    menu: { label: 'MENU', cls: 'menu' },
-    project: { label: 'PROJECT', cls: 'project' },
-  };
-
   function updatePrefixBadge(prefix) {
     const badge = state.modal.querySelector('.whatap-qn-prefix-badge');
     if (!badge) return;
-    if (prefix && PREFIX_LABELS[prefix]) {
-      const info = PREFIX_LABELS[prefix];
-      badge.textContent = info.label;
-      badge.className = 'whatap-qn-prefix-badge whatap-qn-prefix-' + info.cls;
+    if (prefix === 'agent') {
+      badge.textContent = 'AGENT';
+      badge.className = 'whatap-qn-prefix-badge whatap-qn-prefix-agent';
       badge.style.display = '';
     } else {
       badge.style.display = 'none';
@@ -458,251 +351,103 @@
 
   function handleSearch() {
     state.selectedIndex = 0;
+    const rawInput = state.searchInput.value.trim();
+    const { prefix, query } = QN.parseQuery(rawInput);
 
-    if (state.currentStep === 'menu') {
-      const rawInput = state.searchInput.value.trim();
-      const { prefix, query } = QN.parseQuery(rawInput);
+    updatePrefixBadge(prefix);
 
-      updatePrefixBadge(prefix);
-
-      let items;
-      if (prefix === 'agent') {
-        items = QN.getAgentItems();
-      } else if (prefix === 'project') {
-        items = QN.getAllItems().filter(i => i.itemType === 'project');
-      } else if (prefix === 'menu') {
-        items = QN.getAllItems().filter(i => i.itemType === 'menu');
-      } else {
-        items = QN.getAllItems();
-      }
-
-      state.filteredItems = query ? QN.fuzzySearch(query, items) : items;
-      state.currentPrefix = prefix;
-      renderItemResults(prefix);
-    } else if (state.currentStep === 'project') {
-      const projectList = QN.getProjectListForMenu(state.selectedMenu);
-      renderProjectResults(projectList);
-    } else if (state.currentStep === 'menu_for_project') {
-      renderMenusForProject();
+    if (prefix === 'agent') {
+      // 에이전트 검색
+      const items = QN.getAgentItems();
+      const filtered = query ? QN.fuzzySearch(query, items) : items;
+      renderAgentResults(filtered, query);
+    } else if (!query) {
+      // 검색어 없음 → 초기 화면
+      renderInitialScreen();
+    } else {
+      // 콤보 검색
+      const combos = QN.comboSearch(query);
+      renderComboResults(combos, query);
     }
   }
 
   function handleKeydown(e) {
-    // 한글 IME 조합 중이면 무시 (한글 입력 버그 방지)
+    // 한글 IME 조합 중이면 무시
     if (e.isComposing || e.keyCode === 229) return;
 
     // Cmd+D / Ctrl+D: 핀 토글
     if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
       e.preventDefault();
-      if (state.currentStep === 'menu') {
-        const recentCount = state.renderedRecentItems ? state.renderedRecentItems.length : 0;
-        let item;
-        if (state.selectedIndex < recentCount) {
-          item = state.renderedRecentItems[state.selectedIndex];
-        } else {
-          item = state.filteredItems[state.selectedIndex - recentCount];
-        }
-        if (item) {
-          if (item.itemType === 'project') {
-            QN.togglePinProject(item.pcode);
-          } else if (item.itemType === 'menu') {
-            QN.togglePinMenu(item.path);
-          }
-          // 목록 재정렬 후 리렌더링
-          const rawInput = state.searchInput.value.trim();
-          const parsed = QN.parseQuery(rawInput);
-          let pinItems;
-          if (parsed.prefix === 'agent') pinItems = QN.getAgentItems();
-          else if (parsed.prefix === 'project') pinItems = QN.getAllItems().filter(i => i.itemType === 'project');
-          else if (parsed.prefix === 'menu') pinItems = QN.getAllItems().filter(i => i.itemType === 'menu');
-          else pinItems = QN.getAllItems();
-          state.filteredItems = parsed.query ? QN.fuzzySearch(parsed.query, pinItems) : pinItems;
-          renderItemResults(parsed.prefix);
-        }
-      } else if (state.currentStep === 'project') {
-        const projectList = QN.getProjectListForMenu(state.selectedMenu);
-        const query = state.searchInput.value.trim();
-        const finalList = QN.filterAndSortProjects(projectList, query);
-        if (finalList[state.selectedIndex]) {
-          QN.togglePinProject(finalList[state.selectedIndex].pcode);
-          renderProjectResults(projectList);
-        }
+      if (!isAgentMode && comboItems[state.selectedIndex]) {
+        const combo = comboItems[state.selectedIndex];
+        QN.togglePinCombo(combo.menu.path, combo.project ? combo.project.pcode : null);
+        // 목록 재렌더링
+        handleSearch();
       }
       return;
     }
 
-    const maxIndex = state.resultsList.querySelectorAll('.whatap-qn-item').length - 1;
+    const items = isAgentMode ? agentItems : comboItems;
+    const maxIndex = items.length - 1;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
         state.isKeyboardNavigation = true;
         state.selectedIndex = Math.min(state.selectedIndex + 1, maxIndex);
-        if (state.currentStep === 'menu') {
-          renderItemResults(state.currentPrefix);
-        } else if (state.currentStep === 'project') {
-          renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
-        } else if (state.currentStep === 'menu_for_project') {
-          renderMenusForProject();
-        }
+        updateSelection();
         break;
 
       case 'ArrowUp':
         e.preventDefault();
         state.isKeyboardNavigation = true;
         state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
-        if (state.currentStep === 'menu') {
-          renderItemResults(state.currentPrefix);
-        } else if (state.currentStep === 'project') {
-          renderProjectResults(QN.getProjectListForMenu(state.selectedMenu));
-        } else if (state.currentStep === 'menu_for_project') {
-          renderMenusForProject();
-        }
+        updateSelection();
         break;
 
       case 'Enter':
         e.preventDefault();
-        const openInNewTab = e.metaKey || e.ctrlKey; // Cmd+Enter / Ctrl+Enter
-
-        if (state.currentStep === 'menu') {
-          const recentCount = state.renderedRecentItems ? state.renderedRecentItems.length : 0;
-          if (state.selectedIndex < recentCount) {
-            const item = state.renderedRecentItems[state.selectedIndex];
-            if (item.fullPath) {
-              if (openInNewTab) {
-                window.open(item.fullPath, '_blank');
-              } else {
-                window.location.href = item.fullPath;
-                hideModal();
-              }
-            } else {
-              selectMenu(item, openInNewTab);
-            }
-          } else {
-            const item = state.filteredItems[state.selectedIndex - recentCount];
-            if (item) {
-              if (item.itemType === 'agent') {
-                navigateToAgent(item, openInNewTab);
-              } else if (item.itemType === 'project') {
-                selectProjectFirst(item);
-              } else {
-                selectMenu(item, openInNewTab);
-              }
-            }
+        const openInNewTab = e.metaKey || e.ctrlKey;
+        if (isAgentMode) {
+          if (agentItems[state.selectedIndex]) {
+            navigateToAgent(agentItems[state.selectedIndex], openInNewTab);
           }
-        } else if (state.currentStep === 'project') {
-          const projectList = QN.getProjectListForMenu(state.selectedMenu);
-          const query = state.searchInput.value.trim();
-          const finalList = QN.filterAndSortProjects(projectList, query);
-          if (finalList[state.selectedIndex]) {
-            navigateToProject(finalList[state.selectedIndex], openInNewTab);
+        } else {
+          if (comboItems[state.selectedIndex]) {
+            navigateToCombo(comboItems[state.selectedIndex], openInNewTab);
           }
-        } else if (state.currentStep === 'menu_for_project') {
-          const menus = QN.getMenusForProductType(state.selectedProject.productType);
-          const query = state.searchInput.value.trim();
-          const filtered = query ? QN.fuzzySearch(query, menus) : menus;
-          if (filtered[state.selectedIndex]) {
-            navigateFromProject(filtered[state.selectedIndex], openInNewTab);
-          }
-        }
-        break;
-
-      case 'Backspace':
-        if (state.searchInput.value === '' && (state.currentStep === 'project' || state.currentStep === 'menu_for_project')) {
-          e.preventDefault();
-          goBackToMenuStep();
         }
         break;
 
       case 'Escape':
         e.preventDefault();
-        // 검색어가 있으면 지우기만
+        e.stopPropagation(); // 글로벌 핸들러 중복 방지
         if (state.searchInput.value.length > 0) {
           state.searchInput.value = '';
           handleSearch();
-        }
-        // 프로젝트/메뉴 선택 단계면 첫 단계로 돌아가기
-        else if (state.currentStep === 'project' || state.currentStep === 'menu_for_project') {
-          goBackToMenuStep();
-        }
-        // 검색어 없고 첫 단계면 닫기
-        else {
+        } else {
           hideModal();
         }
         break;
     }
   }
 
-  function selectMenu(menu, openInNewTab = false) {
-    if (menu.productType === 'global') {
-      // Global 메뉴는 바로 이동
-      QN.saveVisitCount(menu.path);
-      QN.saveRecentVisit(menu.path, 'menu');
-      const fullPath = menu.fullPath || menu.path;
-      if (openInNewTab) {
-        window.open(fullPath, '_blank');
-      } else {
-        window.location.href = fullPath;
-        hideModal();
-      }
-    } else {
-      // 프로젝트 선택 단계로 이동
-      state.selectedMenu = menu;
-      state.currentStep = 'project';
-      state.selectedIndex = 0;
-      state.searchInput.value = '';
-      state.searchInput.placeholder = '프로젝트 검색...';
-      updateBreadcrumb();
-      renderProjectResults(QN.getProjectListForMenu(menu));
-      state.searchInput.focus();
+  // ============================================
+  // 네비게이션
+  // ============================================
+
+  function navigateToCombo(combo, openInNewTab = false) {
+    // 방문 기록 저장
+    QN.saveVisitCount(combo.menu.path);
+    if (combo.project) {
+      QN.saveProjectVisitCount(combo.project.pcode);
     }
-  }
-
-  // 프로젝트 먼저 선택 (첫 단계에서)
-  function selectProjectFirst(project) {
-    state.selectedProject = project;
-    state.currentStep = 'menu_for_project';
-    state.selectedIndex = 0;
-    state.searchInput.value = '';
-    state.searchInput.placeholder = '메뉴 검색...';
-    updateBreadcrumb();
-    renderMenusForProject();
-    state.searchInput.focus();
-  }
-
-  function navigateToProject(project, openInNewTab = false) {
-    // 공통 메뉴면 프로젝트의 productType 사용, 아니면 메뉴의 productType 사용
-    const urlProductType = state.selectedMenu.productType === 'common'
-      ? QN.getUrlProductType(project.productType)
-      : state.selectedMenu.productType;
-    const fullPath = `/v2/project/${urlProductType}/${project.pcode}${state.selectedMenu.path}`;
-    QN.saveVisitCount(state.selectedMenu.path);
-    QN.saveProjectVisitCount(project.pcode);
-    QN.saveRecentVisit(state.selectedMenu.path, 'menu', project.pcode);
+    QN.saveRecentVisit(combo.menu.path, 'menu', combo.project ? combo.project.pcode : null);
 
     if (openInNewTab) {
-      window.open(fullPath, '_blank');
+      window.open(combo.fullPath, '_blank');
     } else {
-      window.location.href = fullPath;
-      hideModal();
-    }
-  }
-
-  // 프로젝트 먼저 선택 후 메뉴 선택 → 이동
-  function navigateFromProject(menu, openInNewTab = false) {
-    // 공통 메뉴면 프로젝트의 productType 사용
-    const urlProductType = menu.productType === 'common'
-      ? QN.getUrlProductType(state.selectedProject.productType)
-      : menu.productType;
-    const fullPath = `/v2/project/${urlProductType}/${state.selectedProject.pcode}${menu.path}`;
-    QN.saveVisitCount(menu.path);
-    QN.saveProjectVisitCount(state.selectedProject.pcode);
-    QN.saveRecentVisit(menu.path, 'menu', state.selectedProject.pcode);
-
-    if (openInNewTab) {
-      window.open(fullPath, '_blank');
-    } else {
-      window.location.href = fullPath;
+      window.location.href = combo.fullPath;
       hideModal();
     }
   }
@@ -721,21 +466,6 @@
       window.location.href = fullPath;
       hideModal();
     }
-  }
-
-  function goBackToMenuStep() {
-    state.currentStep = 'menu';
-    state.selectedMenu = null;
-    state.selectedProject = null;
-    state.selectedIndex = 0;
-    state.currentPrefix = null;
-    state.searchInput.value = '';
-    state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
-    updatePrefixBadge(null);
-    updateBreadcrumb();
-    state.filteredItems = QN.getAllItems();
-    renderItemResults();
-    state.searchInput.focus();
   }
 
   // ============================================
@@ -757,17 +487,11 @@
     createModal();
     state.modal.classList.toggle('whatap-qn-light', detectTheme() === 'light');
     state.modal.classList.add('visible');
-    state.currentStep = 'menu';
-    state.selectedMenu = null;
-    state.selectedProject = null;
-    state.currentPrefix = null;
     state.searchInput.value = '';
-    state.searchInput.placeholder = '메뉴 검색... (a: 에이전트, p: 프로젝트)';
+    state.searchInput.placeholder = 'Search menus, projects...';
     updatePrefixBadge(null);
-    updateBreadcrumb();
-    state.filteredItems = QN.getAllItems();
     state.selectedIndex = 0;
-    renderItemResults();
+    renderInitialScreen();
     state.searchInput.focus();
   }
 
@@ -812,22 +536,15 @@
         showModal();
       }
     }
-    // ESC 키 처리
+    // ESC 키 처리 (폴백: input이 포커스되지 않은 경우)
     if (e.key === 'Escape' && state.modal && state.modal.classList.contains('visible')) {
       e.preventDefault();
       e.stopPropagation();
 
-      // 검색어가 있으면 지우기만 (1번째 ESC)
       if (state.searchInput && state.searchInput.value.length > 0) {
         state.searchInput.value = '';
         handleSearch();
-      }
-      // 프로젝트/메뉴 선택 단계면 첫 단계로 돌아가기
-      else if (state.currentStep === 'project' || state.currentStep === 'menu_for_project') {
-        goBackToMenuStep();
-      }
-      // 검색어 없고 첫 단계면 모달 닫기 (2번째 ESC)
-      else {
+      } else {
         hideModal();
       }
     }
@@ -837,7 +554,7 @@
   QN.loadVisitCounts();
   QN.loadProjectVisitCounts();
   QN.loadRecentVisits();
-  QN.loadPinned();
+  QN.loadPinnedCombos();
   QN.loadAgents();
   QN.applyVisitDecay();
   QN.loadProjects().then(() => {
