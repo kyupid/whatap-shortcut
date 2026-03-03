@@ -982,8 +982,8 @@
     return score;
   }
 
-  // 단일 단어의 프로젝트 매칭 점수
-  function scoreProjectForWord(word, project) {
+  // 단일 단어의 프로젝트 매칭 점수 (exact/prefix/includes만 - 빠름)
+  function scoreProjectForWordFast(word, project) {
     const lw = word.toLowerCase();
     let score = 0;
 
@@ -1003,13 +1003,17 @@
     // 플랫폼 매칭
     if (platform.includes(lw)) score = Math.max(score, 20);
 
-    // fzf 퍼지 매칭 (fallback)
-    if (score === 0) {
-      const fzf = QN.fzfScore(lw, name);
-      if (fzf > 0) score = Math.min(fzf, 80);
-    }
-
     return score;
+  }
+
+  // 단일 단어의 프로젝트 매칭 점수 (fzf 포함 - 느림)
+  function scoreProjectForWord(word, project) {
+    const score = scoreProjectForWordFast(word, project);
+    if (score > 0) return score;
+
+    // fzf 퍼지 매칭 (fallback)
+    const fzf = QN.fzfScore(word.toLowerCase(), project.name.toLowerCase());
+    return fzf > 0 ? Math.min(fzf, 80) : 0;
   }
 
   // productType 호환성 검사
@@ -1019,14 +1023,28 @@
     return menu.productType === QN.getUrlProductType(project.productType);
   }
 
-  // 메뉴에 호환되는 프로젝트 목록 (빈도순)
+  // 메뉴에 호환되는 프로젝트 목록 (빈도순, 상위 N개만)
   function getCompatibleProjects(menu, allProjects) {
-    const filtered = allProjects.filter(p => isProductTypeCompatible(menu, p));
-    return filtered.sort((a, b) => {
-      const countA = QN.state.projectVisitCounts[a.pcode] || 0;
-      const countB = QN.state.projectVisitCounts[b.pcode] || 0;
-      return countB - countA;
+    // 방문 기록 있는 프로젝트만 우선 필터 + 호환성 체크
+    const withVisits = [];
+    const withoutVisits = [];
+    for (const p of allProjects) {
+      if (!isProductTypeCompatible(menu, p)) continue;
+      if (QN.state.projectVisitCounts[p.pcode] > 0) {
+        withVisits.push(p);
+      } else if (withVisits.length < MAX_AUTO_PROJECTS) {
+        withoutVisits.push(p);
+      }
+    }
+    withVisits.sort((a, b) => {
+      return (QN.state.projectVisitCounts[b.pcode] || 0) - (QN.state.projectVisitCounts[a.pcode] || 0);
     });
+    // 방문 기록 있는 프로젝트로 충분하면 그것만, 아니면 나머지 추가
+    const result = withVisits.slice(0, MAX_AUTO_PROJECTS);
+    if (result.length < MAX_AUTO_PROJECTS) {
+      result.push(...withoutVisits.slice(0, MAX_AUTO_PROJECTS - result.length));
+    }
+    return result;
   }
 
   // Combo Search: 쿼리로 메뉴+프로젝트 조합 검색
@@ -1053,10 +1071,21 @@
 
     const projectMatches = words.map(w => {
       const m = new Map();
+      // 1차: exact/prefix/includes 매칭 (빠름)
       allProjects.forEach(proj => {
-        const s = scoreProjectForWord(w, proj);
+        const s = scoreProjectForWordFast(w, proj);
         if (s > 0) m.set(String(proj.pcode), s);
       });
+      // 2차: 결과 부족하면 fzf 퍼지 매칭 추가 (느림)
+      if (m.size < 10) {
+        const lw = w.toLowerCase();
+        allProjects.forEach(proj => {
+          const pcode = String(proj.pcode);
+          if (m.has(pcode)) return;
+          const fzf = QN.fzfScore(lw, proj.name.toLowerCase());
+          if (fzf > 0) m.set(pcode, Math.min(fzf, 80));
+        });
+      }
       return m;
     });
 
@@ -1162,11 +1191,16 @@
 
     // Step 3: 단일 단어일 때 프로젝트 매칭 → 최근 메뉴와 자동 조합
     if (words.length === 1) {
-      const candidatePcodes = new Set(projectMatches[0].keys());
-      candidatePcodes.forEach(pcode => {
-        const proj = allProjects.find(p => String(p.pcode) === pcode);
-        if (!proj) return;
-        const projScore = projectMatches[0].get(pcode) || 0;
+      // 점수 상위 프로젝트만 처리 (성능 최적화)
+      const projEntries = [...projectMatches[0].entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 30);
+
+      for (const [pcode, projScore] of projEntries) {
+        if (combos.length >= MAX_COMBO_RESULTS) break;
+
+        const proj = projectLookup.get(pcode);
+        if (!proj) continue;
 
         // 이 프로젝트의 최근 방문 메뉴와 조합
         const recentMenuPaths = QN.state.recentVisits
@@ -1185,7 +1219,7 @@
         menus.slice(0, 3).forEach(m => {
           addCombo(m, proj, 0, projScore);
         });
-      });
+      }
     }
 
     return combos.sort((a, b) => b.score - a.score).slice(0, MAX_COMBO_RESULTS);

@@ -13,6 +13,10 @@
   let isAgentMode = false;
   let agentItems = [];
 
+  // 디바운스 타이머
+  let searchDebounceTimer = null;
+  const SEARCH_DEBOUNCE_MS = 150;
+
   // ============================================
   // 모달 UI
   // ============================================
@@ -59,7 +63,7 @@
     const refreshBtn = state.modal.querySelector('.whatap-qn-refresh-btn');
     const resetBtn = state.modal.querySelector('.whatap-qn-reset-btn');
 
-    state.searchInput.addEventListener('input', handleSearch);
+    state.searchInput.addEventListener('input', handleSearchDebounced);
     state.searchInput.addEventListener('keydown', handleKeydown);
     backdrop.addEventListener('click', hideModal);
 
@@ -347,6 +351,11 @@
     } else {
       badge.style.display = 'none';
     }
+  }
+
+  function handleSearchDebounced() {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(handleSearch, SEARCH_DEBOUNCE_MS);
   }
 
   function handleSearch() {
